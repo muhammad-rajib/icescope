@@ -1,0 +1,26 @@
+[package]
+name = "icescope"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "icescope_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "icescope"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+anyhow.workspace = true
+icescope-core = { path = "../crates/icescope-core" }
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tokio.workspace = true
+

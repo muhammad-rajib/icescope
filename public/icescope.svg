@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="IceScope">
+  <rect width="128" height="128" rx="28" fill="#07111f"/>
+  <path d="M64 18 103 41v46l-39 23-39-23V41z" fill="#38bdf8" opacity=".18"/>
+  <path d="M64 24 97 44v40l-33 20-33-20V44z" fill="none" stroke="#7dd3fc" stroke-width="6"/>
+  <circle cx="64" cy="64" r="19" fill="none" stroke="#e0f2fe" stroke-width="8"/>
+  <path d="m78 78 22 22" stroke="#e0f2fe" stroke-width="8" stroke-linecap="round"/>
+</svg>

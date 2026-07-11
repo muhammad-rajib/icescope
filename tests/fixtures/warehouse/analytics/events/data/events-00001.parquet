@@ -1,0 +1,26 @@
+PAR1
+{
+  "warning": "Install pyarrow and rerun scripts/generate_parquet_fixtures.py to create binary Parquet.",
+  "table": "analytics.events",
+  "rows": [
+    {
+      "event_id": "evt-001",
+      "user_id": "usr-001",
+      "event_type": "page_view",
+      "occurred_at": "2026-01-10T10:00:00Z"
+    },
+    {
+      "event_id": "evt-002",
+      "user_id": "usr-002",
+      "event_type": "signup",
+      "occurred_at": "2026-01-10T10:05:00Z"
+    },
+    {
+      "event_id": "evt-003",
+      "user_id": "usr-001",
+      "event_type": "purchase",
+      "occurred_at": "2026-01-10T10:15:00Z"
+    }
+  ]
+}
+PAR1

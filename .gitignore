@@ -1,0 +1,38 @@
+# Node
+node_modules/
+dist/
+
+# Rust
+target/
+Cargo.lock
+
+# Tauri
+src-tauri/target/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.*
+
+# Build
+release/
+debug/
+
+# Coverage
+coverage/
+
+# Temporary
+tmp/
+temp/
+
+# OS
+Thumbs.db

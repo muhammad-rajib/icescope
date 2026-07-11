@@ -1,0 +1,91 @@
+{
+  "format-version": 2,
+  "table-uuid": "3ab7e829-6366-59a7-9624-cb394622b88c",
+  "location": "file:///Users/muhammadrajib/Desktop/projects/icescope/tests/fixtures/warehouse/analytics/users",
+  "last-sequence-number": 1,
+  "last-updated-ms": 1783755679147,
+  "last-column-id": 4,
+  "current-schema-id": 0,
+  "schemas": [
+    {
+      "type": "struct",
+      "schema-id": 0,
+      "fields": [
+        {
+          "id": 1,
+          "name": "user_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "id": 2,
+          "name": "email",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "id": 3,
+          "name": "country",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "id": 4,
+          "name": "created_at",
+          "required": false,
+          "type": "timestamptz"
+        }
+      ]
+    }
+  ],
+  "default-spec-id": 0,
+  "partition-specs": [
+    {
+      "spec-id": 0,
+      "fields": []
+    }
+  ],
+  "last-partition-id": 999,
+  "default-sort-order-id": 0,
+  "sort-orders": [
+    {
+      "order-id": 0,
+      "fields": []
+    }
+  ],
+  "properties": {
+    "owner": "icescope",
+    "write.format.default": "parquet",
+    "fixture": "true",
+    "fixture.data-file": "../data/users-00001.parquet",
+    "fixture.record-count": "2"
+  },
+  "current-snapshot-id": 1,
+  "refs": {
+    "main": {
+      "snapshot-id": 1,
+      "type": "branch"
+    }
+  },
+  "snapshots": [
+    {
+      "snapshot-id": 1,
+      "sequence-number": 1,
+      "timestamp-ms": 1783755679147,
+      "summary": {
+        "operation": "append",
+        "added-data-files": "1",
+        "added-records": "2"
+      },
+      "manifest-list": "file:///Users/muhammadrajib/Desktop/projects/icescope/tests/fixtures/warehouse/analytics/users/metadata/snap-1.avro",
+      "schema-id": 0
+    }
+  ],
+  "snapshot-log": [
+    {
+      "timestamp-ms": 1783755679147,
+      "snapshot-id": 1
+    }
+  ],
+  "metadata-log": []
+}

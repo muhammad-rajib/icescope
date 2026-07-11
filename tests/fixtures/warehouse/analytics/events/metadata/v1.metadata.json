@@ -1,0 +1,91 @@
+{
+  "format-version": 2,
+  "table-uuid": "3a33b06e-9a70-5a35-8633-8015226b5f34",
+  "location": "file:///Users/muhammadrajib/Desktop/projects/icescope/tests/fixtures/warehouse/analytics/events",
+  "last-sequence-number": 1,
+  "last-updated-ms": 1783755679144,
+  "last-column-id": 4,
+  "current-schema-id": 0,
+  "schemas": [
+    {
+      "type": "struct",
+      "schema-id": 0,
+      "fields": [
+        {
+          "id": 1,
+          "name": "event_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "id": 2,
+          "name": "user_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "id": 3,
+          "name": "event_type",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "id": 4,
+          "name": "occurred_at",
+          "required": false,
+          "type": "timestamptz"
+        }
+      ]
+    }
+  ],
+  "default-spec-id": 0,
+  "partition-specs": [
+    {
+      "spec-id": 0,
+      "fields": []
+    }
+  ],
+  "last-partition-id": 999,
+  "default-sort-order-id": 0,
+  "sort-orders": [
+    {
+      "order-id": 0,
+      "fields": []
+    }
+  ],
+  "properties": {
+    "owner": "icescope",
+    "write.format.default": "parquet",
+    "fixture": "true",
+    "fixture.data-file": "../data/events-00001.parquet",
+    "fixture.record-count": "3"
+  },
+  "current-snapshot-id": 1,
+  "refs": {
+    "main": {
+      "snapshot-id": 1,
+      "type": "branch"
+    }
+  },
+  "snapshots": [
+    {
+      "snapshot-id": 1,
+      "sequence-number": 1,
+      "timestamp-ms": 1783755679144,
+      "summary": {
+        "operation": "append",
+        "added-data-files": "1",
+        "added-records": "3"
+      },
+      "manifest-list": "file:///Users/muhammadrajib/Desktop/projects/icescope/tests/fixtures/warehouse/analytics/events/metadata/snap-1.avro",
+      "schema-id": 0
+    }
+  ],
+  "snapshot-log": [
+    {
+      "timestamp-ms": 1783755679144,
+      "snapshot-id": 1
+    }
+  ],
+  "metadata-log": []
+}

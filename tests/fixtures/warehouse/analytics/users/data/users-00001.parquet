@@ -1,0 +1,20 @@
+PAR1
+{
+  "warning": "Install pyarrow and rerun scripts/generate_parquet_fixtures.py to create binary Parquet.",
+  "table": "analytics.users",
+  "rows": [
+    {
+      "user_id": "usr-001",
+      "email": "ada@example.com",
+      "country": "US",
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "user_id": "usr-002",
+      "email": "grace@example.com",
+      "country": "GB",
+      "created_at": "2026-01-02T00:00:00Z"
+    }
+  ]
+}
+PAR1

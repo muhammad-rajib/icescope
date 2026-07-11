@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement for IceScope
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow should IceScope improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What would you like to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Explorer
+        - SQL Lab
+        - Catalogs
+        - S3
+        - Query engine
+        - Settings
+        - Release/install
+        - Other
