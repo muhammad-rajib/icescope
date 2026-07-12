@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: Test every push and pull request
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,13 +27,37 @@ jobs:
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
       - uses: Swatinem/rust-cache@v2
 
-      - run: npm ci
-      - run: npm test
-      - run: cargo test --workspace
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Frontend lint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npm run check
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Production frontend build
+        run: npm run build
+
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Rust clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --workspace
 
   minio:
+    name: MinIO integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

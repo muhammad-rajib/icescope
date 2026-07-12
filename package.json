@@ -9,10 +9,14 @@
     "dev": "vite",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
+    "lint": "tsc --noEmit",
     "build": "tsc && vite build",
     "tauri:build": "tauri build",
     "test": "vitest run",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "docs:dev": "npx vitepress@1.6.4 dev docs",
+    "docs:build": "npx vitepress@1.6.4 build docs",
+    "docs:preview": "npx vitepress@1.6.4 preview docs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

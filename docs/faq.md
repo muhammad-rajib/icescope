@@ -2,32 +2,32 @@
 
 ## What is IceScope?
 
-IceScope is a desktop application for browsing Apache Iceberg warehouses and running exploratory SQL.
+IceScope is a desktop application for exploring Apache Iceberg catalogs, table metadata, snapshots, and data previews.
 
-## What is Apache Iceberg?
+## Is IceScope a query engine?
 
-Apache Iceberg is an open table format for large analytic datasets. It tracks table schemas, snapshots, manifests, and data files.
+No. IceScope routes query work to embedded or external engines. Preview builds focus on DataFusion for local queries.
 
-## Does IceScope move or modify my data?
+## Does IceScope modify data?
 
-IceScope is designed as a read-oriented explorer. Current browsing and query workflows read metadata and Parquet files.
+Preview builds are designed for read-only exploration.
 
-## Which catalogs are supported?
+## Which catalogs are stable?
 
-Local Hadoop-style layouts are supported first. REST Catalog, AWS Glue, Hive Metastore, and Nessie are planned.
+Local Hadoop-style warehouses are the current stable path. REST Catalog, AWS Glue, Hive, JDBC, and Nessie are planned.
 
-## Can I query S3 data?
+## Does S3 work?
 
-S3 storage support exists for metadata and object access. Query behavior depends on the selected engine and catalog path.
+S3 and MinIO support is experimental. It is useful for early testing but not documented as stable yet.
 
-## Where are connections stored?
+## Where are settings stored?
 
-Connections are stored in the application data directory using SQLite.
+Settings and application state are stored locally by the desktop app.
 
-## Where is query history stored?
+## Can I use IceScope with production warehouses?
 
-SQL Lab history is stored locally per connection when enabled in Settings.
+Use caution during preview releases. Prefer read-only credentials and test in non-critical environments first.
 
-## Is IceScope production-ready?
+## Is IceScope open source?
 
-IceScope is pre-`1.0.0`. It is suitable for experimentation and early feedback, but APIs and cache formats may change.
+Yes. IceScope is released under the Apache-2.0 license.

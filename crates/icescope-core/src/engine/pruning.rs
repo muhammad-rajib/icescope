@@ -115,16 +115,16 @@ fn file_may_match(file: &DataFileRecord, predicate: &Predicate) -> bool {
         }
         PredicateOp::Lt => lower
             .and_then(|lower| compare_json(lower, &predicate.value))
-            .map_or(true, |ordering| ordering.is_lt()),
+            .is_none_or(|ordering| ordering.is_lt()),
         PredicateOp::Lte => lower
             .and_then(|lower| compare_json(lower, &predicate.value))
-            .map_or(true, |ordering| ordering.is_le()),
+            .is_none_or(|ordering| ordering.is_le()),
         PredicateOp::Gt => upper
             .and_then(|upper| compare_json(upper, &predicate.value))
-            .map_or(true, |ordering| ordering.is_gt()),
+            .is_none_or(|ordering| ordering.is_gt()),
         PredicateOp::Gte => upper
             .and_then(|upper| compare_json(upper, &predicate.value))
-            .map_or(true, |ordering| ordering.is_ge()),
+            .is_none_or(|ordering| ordering.is_ge()),
     }
 }
 

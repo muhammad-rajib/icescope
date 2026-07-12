@@ -100,7 +100,6 @@ pub fn load_table_metadata(
         .unwrap_or_default()
         .into_iter()
         .find(|spec| spec.spec_id == metadata.default_spec_id)
-        .or_else(|| None)
         .map(|spec| spec.fields)
         .unwrap_or_default()
         .into_iter()

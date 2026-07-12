@@ -1,41 +1,54 @@
 # Getting Started
 
-## Install IceScope
+This guide uses a local Iceberg warehouse because it is the fastest way to understand IceScope.
 
-Download a release installer from GitHub Releases when available, or run from source:
+## 1. Install IceScope
 
-```bash
-make install
-make dev
-```
+Download a preview build from [GitHub Releases](https://github.com/muhammad-rajib/icescope/releases/latest), or build from source.
 
-## Create Your First Connection
+## 2. Open the application
 
-1. Open **Connections**.
-2. Click **New connection**.
-3. Enter a connection name.
-4. Select `local` storage for a local warehouse.
-5. Enter the warehouse path.
-6. Select `datafusion` as the query engine.
-7. Save the connection.
+Launch IceScope and open the **Connections** page.
 
-You can also use **Add sample data** for the bundled fixture warehouse.
+## 3. Create a local warehouse connection
 
-## Browse Tables
+Choose a local warehouse template and provide:
 
-1. Open **Explorer**.
-2. Expand a namespace.
-3. Select a table.
-4. Use the right panel to view table rows, schema, and catalog metadata.
+- Connection name
+- Warehouse directory
+- Storage type: `Local`
+- Query engine: `DataFusion`
 
-## Run Your First Query
+## 4. Select the warehouse directory
 
-Open **SQL Lab** and run:
+Point IceScope at the directory that contains Iceberg table folders and metadata files.
+
+## 5. Test and save the connection
+
+Use **Test** first. If the warehouse is reachable, save the connection and connect.
+
+## 6. Browse a namespace
+
+Open **Explorer** and expand the active connection. Namespaces appear in the left table browser.
+
+## 7. Open tables
+
+Select a table such as `customers`, `orders`, or `products` if those exist in your demo warehouse.
+
+## 8. Run a SQL query
+
+Open **SQL Lab** and run a read-only query:
 
 ```sql
 SELECT *
-FROM analytics.events
-LIMIT 10;
+FROM learning.demo.customers
+LIMIT 100;
 ```
 
-Results appear in the **Results** tab. Messages and query history are available beside it.
+## 9. Inspect metadata and snapshots
+
+Return to Explorer and use the **Schema** and **Catalog** tabs to inspect table details, current snapshot metadata, and data file information.
+
+::: tip Screenshot placeholders
+Screenshots will be added under `docs/public/screenshots/` as preview builds stabilize.
+:::

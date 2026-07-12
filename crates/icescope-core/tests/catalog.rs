@@ -1,9 +1,4 @@
 #[test]
-fn scaffold_is_testable() {
-    assert!(true);
-}
-
-#[test]
 fn local_catalog_lists_namespaced_fixture_tables() {
     use icescope_core::{catalog, ConnectionProfile, QueryEngine, StorageType};
 

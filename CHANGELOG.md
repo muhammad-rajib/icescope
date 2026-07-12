@@ -2,9 +2,17 @@
 
 All notable changes to IceScope are documented in this file.
 
-IceScope follows Semantic Versioning: `MAJOR.MINOR.PATCH`.
+This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Semantic Versioning.
 
-## [0.1.0] - Unreleased
+## [Unreleased]
+
+### Added
+
+- Production release automation for GitHub Actions.
+- GitHub Pages documentation publishing.
+- Release helper script for synchronized version bumps.
+
+## [0.1.0-preview] - Unreleased
 
 ### Added
 
@@ -19,9 +27,9 @@ IceScope follows Semantic Versioning: `MAJOR.MINOR.PATCH`.
 - SQL Lab with multi-tab editor, DataFusion execution, query history, and result grid.
 - Overview dashboard with KPI cards and table summaries.
 - Settings page for theme, editor, cache, performance, logging, and app information.
-- GitHub Actions CI and release workflow scaffolding.
+- GitHub Actions CI, release, and documentation publishing workflows.
 
-### Notes
+### Known Issues
 
-- This is the first public release preparation milestone.
-- APIs, cache formats, and catalog support may change before `1.0.0`.
+- REST Catalog, Glue, Hive Metastore, Nessie, GCS, and Azure workflows are documented/planned but not fully implemented.
+- Tauri updater support is reserved for a future release.

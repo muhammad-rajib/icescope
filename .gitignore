@@ -4,13 +4,13 @@ dist/
 
 # Rust
 target/
-Cargo.lock
 
 # Tauri
 src-tauri/target/
 
 # Logs
 *.log
+logs/
 
 # macOS
 .DS_Store

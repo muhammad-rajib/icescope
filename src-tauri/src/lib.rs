@@ -21,8 +21,7 @@ pub fn run() {
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             let db_path = app_data_dir.join("icescope.db");
-            let db = AppDb::open(&db_path)
-                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+            let db = AppDb::open(&db_path).map_err(std::io::Error::other)?;
             app.manage(AppState::new(db));
             Ok(())
         })

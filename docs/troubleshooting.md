@@ -1,52 +1,56 @@
 # Troubleshooting
 
-## Rust
+## Rust build errors
 
-If Rust commands fail, update the toolchain:
+Update Rust and retry:
 
 ```bash
 rustup update
+cargo build --workspace
 ```
 
-Then run:
+## Tauri dependencies on Linux
 
-```bash
-cargo check --workspace
+Install WebKitGTK and app indicator packages required by Tauri 2. Package names vary by distribution.
+
+## Catalog connection fails
+
+Check:
+
+- Warehouse path exists.
+- Iceberg metadata directories exist.
+- Table metadata JSON is present.
+- The selected connection type matches the warehouse.
+
+## Local warehouse shows no tables
+
+Confirm the directory points to the warehouse root expected by your layout, not a nested data directory.
+
+## AWS or S3 errors
+
+S3 support is experimental. Verify:
+
+- Endpoint.
+- Region.
+- Bucket or warehouse path.
+- Path-style option for MinIO.
+- Environment variables or `~/.aws/credentials`.
+
+## SQL query fails
+
+Try a fully qualified table name and a small `LIMIT`.
+
+```sql
+SELECT *
+FROM learning.demo.customers
+LIMIT 50;
 ```
 
-## Tauri
+## Documentation build fails
 
-If Tauri fails to build, verify platform dependencies. Linux usually needs WebKitGTK and appindicator packages.
-
-## Catalog Connection
-
-If no namespaces or tables appear:
-
-- Confirm the warehouse path is correct.
-- Confirm the table has a `metadata/` directory.
-- Confirm metadata JSON files exist.
-- Refresh the Explorer panel.
-
-## AWS
-
-For S3:
-
-- Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or configure `~/.aws/credentials`.
-- Confirm region and endpoint.
-- Confirm path-style settings for MinIO-compatible services.
-- IceScope does not use IMDS by default.
-
-## Local Warehouse
-
-For local warehouses, use an absolute path when possible. IceScope expects Iceberg table metadata under table directories.
-
-## Build Errors
-
-Run checks separately to isolate failures:
+Install dependencies first:
 
 ```bash
-npm run check
-npm test
-cargo check --workspace
-cargo test --workspace
+npm ci
+npm run docs:build
 ```

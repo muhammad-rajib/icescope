@@ -10,23 +10,28 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
+    name: Build installers and publish GitHub Release
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            args: --target x86_64-apple-darwin
-            name: macos-intel
-          - platform: macos-latest
+          - platform: macos-14
+            target: aarch64-apple-darwin
             args: --target aarch64-apple-darwin
-            name: macos-apple-silicon
-          - platform: ubuntu-22.04
-            args: ""
-            name: linux
+            label: macos-apple-silicon
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+            label: macos-intel
           - platform: windows-latest
+            target: ""
             args: ""
-            name: windows
+            label: windows-x64
+          - platform: ubuntu-22.04
+            target: ""
+            args: ""
+            label: linux-x64
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -49,35 +54,40 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install macOS Intel Rust target
-        if: matrix.name == 'macos-intel'
-        run: rustup target add x86_64-apple-darwin
-
-      - name: Install macOS Apple Silicon Rust target
-        if: matrix.name == 'macos-apple-silicon'
-        run: rustup target add aarch64-apple-darwin
+      - name: Install Rust target
+        if: matrix.target != ''
+        run: rustup target add ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
 
-      - run: npm ci
-      - run: npm run tauri:build -- ${{ matrix.args }}
+      - name: Install frontend dependencies
+        run: npm ci
 
-      - uses: actions/upload-artifact@v4
+      - name: Build with official Tauri action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: icescope-${{ matrix.name }}
-          path: |
-            src-tauri/target/release/bundle/**
-            src-tauri/target/*/release/bundle/**
+          args: ${{ matrix.args }}
+          tagName: ${{ github.ref_name }}
+          releaseName: "IceScope ${{ github.ref_name }}"
+          releaseBody: |
+            ## Highlights
 
-  publish:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+            - First public IceScope preview build.
+            - Native installers for macOS, Windows, and Linux.
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**
-          generate_release_notes: true
+            ## Bug fixes
+
+            - See CHANGELOG.md for the full change history.
+
+            ## Known issues
+
+            - REST Catalog, Glue, Hive Metastore, Nessie, GCS, and Azure workflows are documented/planned but not fully implemented.
+            - Tauri updater support is prepared but not enabled.
+
+            ## Checksums
+
+            Checksums should be generated and attached before promoting this draft release.
+          releaseDraft: true
+          prerelease: true
