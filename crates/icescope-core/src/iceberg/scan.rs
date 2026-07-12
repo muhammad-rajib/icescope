@@ -1,13 +1,19 @@
 use crate::models::{DataFileRecord, SnapshotScanResult};
+use crate::storage::s3::{config_from_warehouse, object_store, parse_s3_uri, S3WarehouseConfig};
 use anyhow::{anyhow, Context};
 use apache_avro::{types::Value as AvroValue, Reader};
+use futures::{stream, StreamExt, TryStreamExt};
+use object_store::{path::Path as ObjectPath, ObjectStore};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::thread;
 
 const MANIFEST_READ_PARALLELISM: usize = 16;
+const S3_MANIFEST_READ_PARALLELISM: usize = 64;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -65,6 +71,60 @@ pub fn current_snapshot_manifest_urls(
     Ok(read_manifest_list(&manifest_list_path)?
         .into_iter()
         .map(|entry| entry.manifest_path)
+        .collect())
+}
+
+pub async fn current_snapshot_data_files_s3(
+    warehouse_uri: &str,
+    settings: Option<&crate::models::S3Settings>,
+    namespace: &str,
+    table: &str,
+) -> anyhow::Result<SnapshotScanResult> {
+    let config = config_from_warehouse(warehouse_uri, settings)?;
+    let store = object_store(&config)?;
+    let metadata_key = latest_metadata_key_s3(store.as_ref(), &config, namespace, table).await?;
+    let metadata = read_table_metadata_s3(store.as_ref(), &metadata_key).await?;
+    current_snapshot_data_files_from_s3_metadata(
+        store,
+        &config,
+        &metadata_key,
+        namespace,
+        table,
+        &metadata,
+    )
+    .await
+}
+
+pub async fn current_snapshot_manifest_urls_s3(
+    warehouse_uri: &str,
+    settings: Option<&crate::models::S3Settings>,
+    namespace: &str,
+    table: &str,
+) -> anyhow::Result<Vec<String>> {
+    let config = config_from_warehouse(warehouse_uri, settings)?;
+    let store = object_store(&config)?;
+    let metadata_key = latest_metadata_key_s3(store.as_ref(), &config, namespace, table).await?;
+    let metadata = read_table_metadata_s3(store.as_ref(), &metadata_key).await?;
+    let snapshot_id = metadata
+        .current_snapshot_id
+        .ok_or_else(|| anyhow!("Iceberg table has no current snapshot"))?;
+    let snapshot = metadata
+        .snapshots
+        .iter()
+        .find(|snapshot| snapshot.snapshot_id == snapshot_id)
+        .ok_or_else(|| anyhow!("Current snapshot {snapshot_id} was not found in metadata"))?;
+    let Some(manifest_list) = &snapshot.manifest_list else {
+        return Ok(Vec::new());
+    };
+
+    let table_location = normalize_uri(&metadata.location);
+    let manifest_list_key =
+        resolve_metadata_s3_key(&config, &metadata_key, &table_location, manifest_list)?;
+
+    Ok(read_manifest_list_s3(store.as_ref(), &manifest_list_key)
+        .await?
+        .into_iter()
+        .map(|entry| absolute_s3_uri(&config.bucket, &entry.manifest_path))
         .collect())
 }
 
@@ -167,8 +227,23 @@ fn read_manifest_list(path: &Path) -> anyhow::Result<Vec<ManifestListEntry>> {
 
     let file = std::fs::File::open(path)
         .with_context(|| format!("failed to open manifest list {}", path.display()))?;
-    let reader = Reader::new(file)
-        .with_context(|| format!("failed to read manifest list Avro {}", path.display()))?;
+    read_manifest_list_from_reader(file)
+        .with_context(|| format!("failed to read manifest list Avro {}", path.display()))
+}
+
+fn read_manifest(path: &Path, table_location: &str) -> anyhow::Result<Vec<DataFileRecord>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let file = std::fs::File::open(path)
+        .with_context(|| format!("failed to open manifest {}", path.display()))?;
+    read_manifest_from_reader(file, table_location)
+        .with_context(|| format!("failed to read manifest Avro {}", path.display()))
+}
+
+fn read_manifest_list_from_reader<R: Read>(reader: R) -> anyhow::Result<Vec<ManifestListEntry>> {
+    let reader = Reader::new(reader)?;
     let mut entries = Vec::new();
 
     for value in reader {
@@ -181,15 +256,11 @@ fn read_manifest_list(path: &Path) -> anyhow::Result<Vec<ManifestListEntry>> {
     Ok(entries)
 }
 
-fn read_manifest(path: &Path, table_location: &str) -> anyhow::Result<Vec<DataFileRecord>> {
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-
-    let file = std::fs::File::open(path)
-        .with_context(|| format!("failed to open manifest {}", path.display()))?;
-    let reader = Reader::new(file)
-        .with_context(|| format!("failed to read manifest Avro {}", path.display()))?;
+fn read_manifest_from_reader<R: Read>(
+    reader: R,
+    table_location: &str,
+) -> anyhow::Result<Vec<DataFileRecord>> {
+    let reader = Reader::new(reader)?;
     let mut files = Vec::new();
 
     for value in reader {
@@ -224,6 +295,179 @@ fn read_manifest(path: &Path, table_location: &str) -> anyhow::Result<Vec<DataFi
     }
 
     Ok(files)
+}
+
+async fn current_snapshot_data_files_from_s3_metadata(
+    store: Arc<dyn ObjectStore>,
+    config: &S3WarehouseConfig,
+    metadata_key: &str,
+    namespace: &str,
+    table: &str,
+    metadata: &TableMetadataJson,
+) -> anyhow::Result<SnapshotScanResult> {
+    let snapshot_id = metadata
+        .current_snapshot_id
+        .ok_or_else(|| anyhow!("Iceberg table has no current snapshot"))?;
+    let snapshot = metadata
+        .snapshots
+        .iter()
+        .find(|snapshot| snapshot.snapshot_id == snapshot_id)
+        .ok_or_else(|| anyhow!("Current snapshot {snapshot_id} was not found in metadata"))?;
+
+    let table_location = normalize_uri(&metadata.location);
+    let files = if let Some(manifest_list) = &snapshot.manifest_list {
+        let manifest_list_key =
+            resolve_metadata_s3_key(config, metadata_key, &table_location, manifest_list)?;
+        let manifest_entries = read_manifest_list_s3(store.as_ref(), &manifest_list_key).await?;
+        read_manifests_s3_parallel(
+            store,
+            config,
+            metadata_key,
+            &table_location,
+            manifest_entries,
+        )
+        .await?
+    } else {
+        Vec::new()
+    };
+
+    Ok(SnapshotScanResult {
+        namespace: namespace.to_string(),
+        table: table.to_string(),
+        files,
+    })
+}
+
+async fn latest_metadata_key_s3(
+    store: &dyn ObjectStore,
+    config: &S3WarehouseConfig,
+    namespace: &str,
+    table: &str,
+) -> anyhow::Result<String> {
+    let metadata_dir = join_s3_key(&config.root, &format!("{namespace}/{table}/metadata"));
+    let version_hint = join_s3_key(&metadata_dir, "version-hint.text");
+
+    if let Ok(contents) = read_object_text_s3(store, &version_hint).await {
+        if let Ok(version) = contents.trim().parse::<u32>() {
+            let key = join_s3_key(&metadata_dir, &format!("v{version}.metadata.json"));
+            if store.head(&ObjectPath::from(key.as_str())).await.is_ok() {
+                return Ok(key);
+            }
+        }
+    }
+
+    let prefix = ObjectPath::from(metadata_dir.as_str());
+    let mut stream = store.list(Some(&prefix));
+    let mut latest: Option<(u32, String)> = None;
+
+    while let Some(meta) = stream.try_next().await? {
+        let key = meta.location.to_string();
+        let Some(version) = metadata_version_from_key(&key) else {
+            continue;
+        };
+        if latest
+            .as_ref()
+            .is_none_or(|(current, _)| version > *current)
+        {
+            latest = Some((version, key));
+        }
+    }
+
+    latest.map(|(_, key)| key).ok_or_else(|| {
+        anyhow!(
+            "No vN.metadata.json found in s3://{}/{}",
+            config.bucket,
+            metadata_dir
+        )
+    })
+}
+
+async fn read_table_metadata_s3(
+    store: &dyn ObjectStore,
+    key: &str,
+) -> anyhow::Result<TableMetadataJson> {
+    let contents = read_object_text_s3(store, key).await?;
+    serde_json::from_str(&contents)
+        .with_context(|| format!("failed to parse table metadata s3 object {key}"))
+}
+
+async fn read_object_text_s3(store: &dyn ObjectStore, key: &str) -> anyhow::Result<String> {
+    let bytes = store
+        .get(&ObjectPath::from(key))
+        .await
+        .with_context(|| format!("failed to read s3 object {key}"))?
+        .bytes()
+        .await?;
+    String::from_utf8(bytes.to_vec()).with_context(|| format!("s3 object {key} is not UTF-8"))
+}
+
+async fn read_manifest_list_s3(
+    store: &dyn ObjectStore,
+    key: &str,
+) -> anyhow::Result<Vec<ManifestListEntry>> {
+    let bytes = store
+        .get(&ObjectPath::from(key))
+        .await
+        .with_context(|| format!("failed to open S3 manifest list {key}"))?
+        .bytes()
+        .await?;
+    read_manifest_list_from_reader(Cursor::new(bytes))
+        .with_context(|| format!("failed to read S3 manifest list Avro {key}"))
+}
+
+async fn read_manifest_s3(
+    store: Arc<dyn ObjectStore>,
+    config: S3WarehouseConfig,
+    key: String,
+    table_location: String,
+) -> anyhow::Result<Vec<DataFileRecord>> {
+    let bytes = store
+        .get(&ObjectPath::from(key.as_str()))
+        .await
+        .with_context(|| format!("failed to open S3 manifest {key}"))?
+        .bytes()
+        .await?;
+    read_manifest_from_reader(Cursor::new(bytes), &table_location)
+        .map(|files| {
+            files
+                .into_iter()
+                .map(|mut file| {
+                    file.file_path =
+                        absolute_data_file_s3_uri(&config, &table_location, &file.file_path);
+                    file
+                })
+                .collect()
+        })
+        .with_context(|| format!("failed to read S3 manifest Avro {key}"))
+}
+
+async fn read_manifests_s3_parallel(
+    store: Arc<dyn ObjectStore>,
+    config: &S3WarehouseConfig,
+    metadata_key: &str,
+    table_location: &str,
+    manifest_entries: Vec<ManifestListEntry>,
+) -> anyhow::Result<Vec<DataFileRecord>> {
+    let manifest_keys = manifest_entries
+        .into_iter()
+        .map(|entry| {
+            resolve_metadata_s3_key(config, metadata_key, table_location, &entry.manifest_path)
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    let chunks = stream::iter(manifest_keys.into_iter().map(|key| {
+        read_manifest_s3(
+            store.clone(),
+            config.clone(),
+            key,
+            table_location.to_string(),
+        )
+    }))
+    .buffer_unordered(S3_MANIFEST_READ_PARALLELISM)
+    .try_collect::<Vec<_>>()
+    .await?;
+
+    Ok(chunks.into_iter().flatten().collect())
 }
 
 fn read_manifests_parallel(
@@ -334,6 +578,38 @@ fn resolve_metadata_uri(
     Ok(PathBuf::from(base).join(normalized))
 }
 
+fn resolve_metadata_s3_key(
+    config: &S3WarehouseConfig,
+    metadata_key: &str,
+    table_location: &str,
+    uri: &str,
+) -> anyhow::Result<String> {
+    let normalized = normalize_uri(uri);
+
+    if normalized.starts_with("s3://") {
+        let (bucket, key) = parse_s3_uri(&normalized)?;
+        if bucket != config.bucket {
+            return Err(anyhow!(
+                "Cross-bucket Iceberg metadata is not supported yet: expected {}, got {}",
+                config.bucket,
+                bucket
+            ));
+        }
+        return Ok(key);
+    }
+
+    if normalized.starts_with("metadata/") {
+        let (_, table_key) = parse_s3_uri(table_location)?;
+        return Ok(join_s3_key(&table_key, &normalized));
+    }
+
+    let metadata_dir = metadata_key
+        .rsplit_once('/')
+        .map(|(dir, _)| dir)
+        .unwrap_or("");
+    Ok(join_s3_key(metadata_dir, &normalized))
+}
+
 fn resolve_data_file_uri(table_location: &str, file_path: &str) -> String {
     let normalized = normalize_uri(file_path);
 
@@ -355,6 +631,52 @@ fn resolve_data_file_uri(table_location: &str, file_path: &str) -> String {
         table_location.trim_end_matches('/'),
         normalized.trim_start_matches('/')
     )
+}
+
+fn absolute_data_file_s3_uri(
+    config: &S3WarehouseConfig,
+    table_location: &str,
+    file_path: &str,
+) -> String {
+    let normalized = normalize_uri(file_path);
+    if normalized.starts_with("s3://") {
+        return normalized;
+    }
+
+    if table_location.starts_with("s3://") {
+        return format!(
+            "{}/{}",
+            table_location.trim_end_matches('/'),
+            normalized.trim_start_matches('/')
+        );
+    }
+
+    absolute_s3_uri(&config.bucket, &join_s3_key(&config.root, &normalized))
+}
+
+fn absolute_s3_uri(bucket: &str, key_or_uri: &str) -> String {
+    let normalized = normalize_uri(key_or_uri);
+    if normalized.starts_with("s3://") {
+        normalized
+    } else {
+        format!("s3://{}/{}", bucket, normalized.trim_start_matches('/'))
+    }
+}
+
+fn join_s3_key(left: &str, right: &str) -> String {
+    match (left.trim_matches('/'), right.trim_matches('/')) {
+        ("", right) => right.to_string(),
+        (left, "") => left.to_string(),
+        (left, right) => format!("{left}/{right}"),
+    }
+}
+
+fn metadata_version_from_key(key: &str) -> Option<u32> {
+    key.rsplit('/')
+        .next()
+        .and_then(|name| name.strip_prefix('v'))
+        .and_then(|name| name.strip_suffix(".metadata.json"))
+        .and_then(|version| version.parse().ok())
 }
 
 fn normalize_uri(uri: &str) -> String {

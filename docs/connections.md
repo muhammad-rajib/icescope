@@ -10,11 +10,9 @@ The engine runs SQL and table preview queries.
 
 | Engine | Status | Notes |
 | --- | --- | --- |
-| Automatic | Planned | Selects the safest available engine for a connection. |
+| Automatic | Available | Selects the safest available engine for a connection. |
 | DataFusion | Available | Primary local query engine in preview builds. |
 | DuckDB | Experimental | Routing is represented, full execution is not stable. |
-| Spark | Planned | Future distributed execution option. |
-| Trino | Planned | Future remote query option. |
 
 ### Iceberg Catalog
 
@@ -23,11 +21,11 @@ The catalog resolves namespaces, tables, snapshots, and metadata.
 | Catalog | Status |
 | --- | --- |
 | Hadoop / local warehouse | Available |
-| REST Catalog | Planned |
-| AWS Glue | Planned |
-| Hive Metastore | Planned |
-| JDBC | Planned |
-| Nessie | Planned |
+| Hadoop / S3 warehouse | Experimental |
+| REST Catalog | Preview |
+| AWS Glue | Configured |
+| Hive Metastore | Configured |
+| Nessie | Preview |
 
 ### Storage
 
@@ -38,8 +36,8 @@ Storage reads metadata JSON, manifest files, and Parquet data files.
 | Local filesystem | Available |
 | S3 | Experimental |
 | MinIO | Experimental |
-| GCS | Planned |
-| Azure ADLS | Planned |
+| GCS | Configured |
+| Azure ADLS | Configured |
 
 ## Templates
 
@@ -49,11 +47,11 @@ Use this for local development and demos. Provide a warehouse directory and sele
 
 ### REST Catalog
 
-Planned template for REST Catalog endpoints.
+Preview template for Iceberg REST Catalog endpoints.
 
 ### AWS Glue + S3
 
-Planned catalog integration with experimental S3 storage foundations.
+Configured catalog integration with experimental S3 storage foundations. Native Glue API discovery is not enabled in this build.
 
 ### MinIO
 
@@ -61,8 +59,8 @@ Experimental S3-compatible storage path. Use explicit endpoint, region, bucket, 
 
 ### Nessie
 
-Planned versioned catalog template.
+Preview versioned catalog template through Nessie Iceberg REST routing.
 
 ### Advanced
 
-Future template for custom catalog, storage, and engine combinations.
+Template for custom catalog, storage, and engine combinations.

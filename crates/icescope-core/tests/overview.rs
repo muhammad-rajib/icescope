@@ -1,5 +1,5 @@
 use icescope_core::overview;
-use icescope_core::{ConnectionProfile, QueryEngine, StorageType};
+use icescope_core::{CatalogType, ConnectionProfile, QueryEngine, StorageType};
 
 #[test]
 fn local_fixture_overview_reports_tables() {
@@ -11,8 +11,13 @@ fn local_fixture_overview_reports_tables() {
         name: "Sample".to_string(),
         warehouse_path: warehouse.to_string_lossy().to_string(),
         storage_type: StorageType::Local,
+        catalog_type: CatalogType::Hadoop,
         query_engine: QueryEngine::Datafusion,
         s3: None,
+        rest: None,
+        glue: None,
+        hive: None,
+        nessie: None,
         athena: None,
     };
 

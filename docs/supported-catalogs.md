@@ -1,33 +1,42 @@
 # Supported Catalogs
 
-IceScope is designed around Apache Iceberg catalog abstractions. Support is incremental.
+IceScope is designed around aligned Apache Iceberg catalog abstractions. A connection now stores catalog, storage, and query engine choices independently.
 
 ## Hadoop
 
-Status: current local support.
+Status: available.
 
-IceScope can browse Hadoop-style warehouse layouts on a local filesystem where namespaces and tables map to directories and Iceberg metadata lives under each table's `metadata/` directory.
+IceScope can browse Hadoop-style warehouse layouts on a local filesystem or S3-compatible object storage where namespaces and tables map to paths and Iceberg metadata lives under each table's `metadata/` directory.
 
 ## REST Catalog
 
-Status: planned.
+Status: preview.
 
-REST Catalog support will allow IceScope to connect to catalog services that implement the Iceberg REST catalog specification.
+IceScope can list namespaces and tables from Iceberg REST-compatible catalog services using the `/v1` API. Token authentication and warehouse/prefix routing are represented in connection profiles.
 
 ## AWS Glue
 
-Status: planned.
+Status: configured.
 
-AWS Glue support will add native table discovery for Glue-backed Iceberg catalogs. S3 credential handling already avoids IMDS by default and supports environment variables and AWS credential files.
+AWS Glue is represented as a first-class catalog type and aligns with S3 storage and Athena routing. Native Glue API discovery requires enabling the AWS Glue client in a future build.
 
 ## Hive Metastore
 
-Status: planned.
+Status: configured.
 
-Hive Metastore support will allow browsing Iceberg tables registered in HMS-backed environments.
+Hive Metastore is represented as a first-class catalog type with URI persistence. Native HMS Thrift discovery requires enabling the Hive client in a future build.
 
 ## Nessie
 
-Status: planned.
+Status: preview.
 
-Nessie support will add branch/tag-aware catalog exploration for Iceberg lakehouses that use Project Nessie.
+Nessie is represented as a first-class catalog type and routes namespace/table discovery through Nessie's Iceberg REST endpoint with branch-aware prefix settings.
+
+## Object storage
+
+| Storage | Status | Notes |
+| --- | --- | --- |
+| Local filesystem | Available | Fully supported for Hadoop-style local warehouses. |
+| S3 / MinIO | Experimental | Used by Hadoop, REST, Glue, Hive, and Nessie profiles. |
+| GCS | Configured | Connection/profile alignment exists; object storage reads require enabling a GCS storage backend. |
+| Azure ADLS | Configured | Connection/profile alignment exists; object storage reads require enabling an Azure storage backend. |

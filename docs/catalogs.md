@@ -7,16 +7,11 @@ Catalogs tell IceScope where namespaces, tables, and Iceberg metadata files live
 | Catalog | Status | Description |
 | --- | --- | --- |
 | Hadoop / local warehouse | Available | Resolves namespaces and tables from local directory layout. |
-
-## Planned support
-
-| Catalog | Status | Description |
-| --- | --- | --- |
-| REST Catalog | Planned | Connect to Iceberg REST-compatible catalog services. |
-| AWS Glue | Planned | Discover Iceberg tables registered in Glue Data Catalog. |
-| Hive Metastore | Planned | Connect to existing HMS deployments. |
-| JDBC | Planned | Catalog metadata backed by relational databases. |
-| Nessie | Planned | Branch-aware and tag-aware Iceberg catalog browsing. |
+| Hadoop / S3 warehouse | Experimental | Resolves namespaces and tables from S3-compatible warehouse paths. |
+| REST Catalog | Preview | Lists namespaces and tables from Iceberg REST-compatible `/v1` APIs. |
+| Nessie | Preview | Routes branch-aware discovery through Nessie's Iceberg REST endpoint. |
+| AWS Glue | Configured | First-class connection type; native Glue API discovery is not enabled in this build. |
+| Hive Metastore | Configured | First-class connection type; native HMS Thrift discovery is not enabled in this build. |
 
 ## Catalog-relative paths
 
@@ -24,4 +19,4 @@ Iceberg metadata may reference data files using catalog-relative paths. IceScope
 
 ## Metadata discovery
 
-For local warehouses, IceScope searches table metadata directories, reads current table metadata, follows the current snapshot, and uses manifest files to discover active Parquet data files.
+For Hadoop-style warehouses, IceScope searches table metadata directories, reads current table metadata, follows the current snapshot, and uses manifest files to discover active Parquet data files.

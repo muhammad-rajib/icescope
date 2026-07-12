@@ -21,7 +21,7 @@ pub fn list_namespaces(
             .ok_or_else(|| format!("Connection not found: {connection_id}"))?
     };
 
-    if matches!(profile.storage_type, StorageType::S3) {
+    if uses_remote_catalog(&profile) {
         let db = state.db.lock().map_err(|error| error.to_string())?;
         if let Some(namespaces) = db
             .get_metadata_cache::<Vec<NamespaceInfo>>(&connection_id, CacheKind::Namespaces, "all")
@@ -35,7 +35,7 @@ pub fn list_namespaces(
 
     let namespaces = catalog::list_namespaces(&profile)
         .map_err(|error| friendly_s3_error(&error.to_string()))?;
-    if matches!(profile.storage_type, StorageType::S3) {
+    if uses_remote_catalog(&profile) {
         state
             .db
             .lock()
@@ -59,7 +59,7 @@ pub fn list_tables(
             .ok_or_else(|| format!("Connection not found: {connection_id}"))?
     };
 
-    if matches!(profile.storage_type, StorageType::S3) {
+    if uses_remote_catalog(&profile) {
         let db = state.db.lock().map_err(|error| error.to_string())?;
         if let Some(tables) = db
             .get_metadata_cache::<Vec<TableInfo>>(&connection_id, CacheKind::Tables, &namespace)
@@ -73,7 +73,7 @@ pub fn list_tables(
 
     let tables = catalog::list_tables(&profile, &namespace)
         .map_err(|error| friendly_s3_error(&error.to_string()))?;
-    if matches!(profile.storage_type, StorageType::S3) {
+    if uses_remote_catalog(&profile) {
         state
             .db
             .lock()
@@ -116,6 +116,14 @@ pub fn get_table_metadata(
             resolve_warehouse_path(&profile.warehouse_path).map_err(|error| error.to_string())?;
         iceberg::local::load_table_metadata(&warehouse, &namespace, &table)
             .map_err(|error| error.to_string())?
+    } else if matches!(profile.storage_type, StorageType::S3) {
+        icescope_core::storage::s3_exec::block_on(iceberg::local::load_table_metadata_s3(
+            &profile.warehouse_path,
+            profile.s3.as_ref(),
+            &namespace,
+            &table,
+        ))
+        .map_err(|error| friendly_s3_error(&error.to_string()))?
     } else {
         TableMetadata {
             namespace,
@@ -210,6 +218,11 @@ fn friendly_preview_error(storage_type: &StorageType, error: &str) -> String {
     }
 
     error.to_string()
+}
+
+fn uses_remote_catalog(profile: &icescope_core::ConnectionProfile) -> bool {
+    !matches!(profile.storage_type, StorageType::Local)
+        || !matches!(profile.catalog_type, icescope_core::CatalogType::Hadoop)
 }
 
 fn sort_clause(column: Option<&str>, direction: Option<&str>) -> Result<String, String> {

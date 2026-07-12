@@ -2,15 +2,24 @@
 
 use crate::catalog;
 use crate::iceberg::scan;
-use crate::models::{ConnectionProfile, OverviewSummary, OverviewTableRow, StorageType};
+use crate::models::{
+    CatalogType, ConnectionProfile, OverviewSummary, OverviewTableRow, StorageType,
+};
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn get_overview(profile: &ConnectionProfile) -> anyhow::Result<OverviewSummary> {
     match profile.storage_type {
-        StorageType::Local => local_overview(&resolve_warehouse_path(&profile.warehouse_path)?),
+        StorageType::Local if matches!(profile.catalog_type, CatalogType::Hadoop) => {
+            local_overview(&resolve_warehouse_path(&profile.warehouse_path)?)
+        }
         StorageType::S3 => Err(anyhow!("S3 overview is not implemented yet")),
+        StorageType::Gcs => Err(anyhow!("GCS overview is not implemented yet")),
+        StorageType::Azure => Err(anyhow!("Azure overview is not implemented yet")),
+        StorageType::Local => Err(anyhow!(
+            "Overview is not implemented for this catalog type yet"
+        )),
     }
 }
 

@@ -10,8 +10,18 @@ pub struct ConnectionProfile {
     pub name: String,
     pub warehouse_path: String,
     pub storage_type: StorageType,
+    #[serde(default)]
+    pub catalog_type: CatalogType,
     pub query_engine: QueryEngine,
     pub s3: Option<S3Settings>,
+    #[serde(default)]
+    pub rest: Option<RestCatalogSettings>,
+    #[serde(default)]
+    pub glue: Option<GlueCatalogSettings>,
+    #[serde(default)]
+    pub hive: Option<HiveCatalogSettings>,
+    #[serde(default)]
+    pub nessie: Option<NessieCatalogSettings>,
     pub athena: Option<AthenaSettings>,
 }
 
@@ -20,6 +30,19 @@ pub struct ConnectionProfile {
 pub enum StorageType {
     Local,
     S3,
+    Gcs,
+    Azure,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum CatalogType {
+    #[default]
+    Hadoop,
+    Rest,
+    Glue,
+    Hive,
+    Nessie,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +59,35 @@ pub struct S3Settings {
     pub region: Option<String>,
     pub endpoint: Option<String>,
     pub path_style: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestCatalogSettings {
+    pub url: String,
+    pub warehouse: Option<String>,
+    pub token: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GlueCatalogSettings {
+    pub region: Option<String>,
+    pub catalog_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HiveCatalogSettings {
+    pub uri: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NessieCatalogSettings {
+    pub url: String,
+    pub branch: Option<String>,
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

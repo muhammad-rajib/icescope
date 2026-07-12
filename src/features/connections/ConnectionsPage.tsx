@@ -22,7 +22,7 @@ import { clearPreviewCacheForConnection } from "../../lib/previewCache";
 import { api } from "../../platform/tauri";
 import { useAppStore } from "../../stores/appStore";
 import { useToastStore } from "../../stores/toastStore";
-import type { ConnectionProfile, QueryEngine, StorageType } from "../../types";
+import type { CatalogType, ConnectionProfile, QueryEngine, StorageType } from "../../types";
 
 type ConnectionKind = "local" | "glue" | "rest" | "minio" | "advanced";
 type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -269,8 +269,13 @@ export function ConnectionsPage() {
       name: "Sample Analytics Warehouse",
       warehousePath: sampleWarehousePath,
       storageType: "local",
+      catalogType: "hadoop",
       queryEngine: "datafusion",
       s3: null,
+      rest: null,
+      glue: null,
+      hive: null,
+      nessie: null,
       athena: null,
     };
 
@@ -438,12 +443,32 @@ export function ConnectionsPage() {
             <InfoRow label="Name" value={infoConnection.name} />
             <InfoRow label="Warehouse" value={infoConnection.warehousePath} />
             <InfoRow label="Storage" value={formatStorage(infoConnection)} />
+            <InfoRow label="Catalog" value={formatCatalog(infoConnection)} />
             <InfoRow label="Engine" value={formatEngine(infoConnection.queryEngine)} />
             {infoConnection.s3 && (
               <>
                 <InfoRow label="S3 region" value={infoConnection.s3.region ?? "Default"} />
                 <InfoRow label="S3 endpoint" value={infoConnection.s3.endpoint ?? "Default"} />
                 <InfoRow label="Path style" value={infoConnection.s3.pathStyle ? "Yes" : "No"} />
+              </>
+            )}
+            {infoConnection.rest && (
+              <>
+                <InfoRow label="REST URL" value={infoConnection.rest.url} />
+                <InfoRow label="REST warehouse" value={infoConnection.rest.warehouse ?? "Default"} />
+              </>
+            )}
+            {infoConnection.glue && (
+              <>
+                <InfoRow label="Glue region" value={infoConnection.glue.region ?? "Default"} />
+                <InfoRow label="Glue catalog ID" value={infoConnection.glue.catalogId ?? "Default"} />
+              </>
+            )}
+            {infoConnection.hive && <InfoRow label="Hive URI" value={infoConnection.hive.uri} />}
+            {infoConnection.nessie && (
+              <>
+                <InfoRow label="Nessie URL" value={infoConnection.nessie.url} />
+                <InfoRow label="Nessie branch" value={infoConnection.nessie.branch ?? "main"} />
               </>
             )}
             {infoConnection.athena && (
@@ -654,8 +679,18 @@ function StorageStep({ form, setForm }: { form: FormState; setForm: (form: FormS
       )}
       {form.storageProvider === "s3" && <S3Fields form={form} setForm={setForm} minio={false} />}
       {form.storageProvider === "minio" && <S3Fields form={form} setForm={setForm} minio />}
-      {form.storageProvider === "gcs" && <ProviderNotice title="Google Cloud Storage" fields={["Bucket", "Warehouse", "ADC or service account authentication"]} />}
-      {form.storageProvider === "azure" && <ProviderNotice title="Azure Data Lake Storage Gen2" fields={["Storage account", "Container", "Warehouse", "Managed identity, service principal, or account key"]} />}
+      {form.storageProvider === "gcs" && (
+        <div className="space-y-3">
+          <TextField label="Warehouse URI" value={form.warehousePath} onChange={(warehousePath) => setForm({ ...form, warehousePath })} placeholder="gs://bucket/warehouse" required />
+          <ProviderNotice title="Google Cloud Storage" fields={["ADC or service account authentication", "Hadoop, REST, Hive, or Nessie catalog"]} />
+        </div>
+      )}
+      {form.storageProvider === "azure" && (
+        <div className="space-y-3">
+          <TextField label="Warehouse URI" value={form.warehousePath} onChange={(warehousePath) => setForm({ ...form, warehousePath })} placeholder="abfs://container@account.dfs.core.windows.net/warehouse" required />
+          <ProviderNotice title="Azure Data Lake Storage Gen2" fields={["Managed identity, service principal, or account key", "Hadoop, REST, Hive, or Nessie catalog"]} />
+        </div>
+      )}
     </section>
   );
 }
@@ -988,7 +1023,7 @@ function validateStorage(form: FormState): ValidationResult {
   if ((form.storageProvider === "s3" || form.storageProvider === "minio") && !form.bucket.trim()) return { valid: false, message: "Bucket is required." };
   if ((form.storageProvider === "s3" || form.storageProvider === "minio") && !form.warehousePrefix.trim()) return { valid: false, message: "Warehouse prefix is required." };
   if (form.storageProvider === "minio" && !form.endpoint.trim()) return { valid: false, message: "MinIO endpoint is required." };
-  if (form.storageProvider === "gcs" || form.storageProvider === "azure") return { valid: false, message: "This storage provider is planned and cannot be saved yet." };
+  if ((form.storageProvider === "gcs" || form.storageProvider === "azure") && !form.warehousePath.trim()) return { valid: false, message: "Warehouse URI is required." };
   return { valid: true };
 }
 
@@ -1009,23 +1044,45 @@ function validateAuthentication(form: FormState): ValidationResult {
 
 function validateCompatibility(form: FormState): ValidationResult {
   const key = `${form.catalogProvider}+${form.storageProvider}`;
-  const supported = new Set(["hadoop+local", "hadoop+s3", "rest+s3", "rest+minio", "glue+s3", "nessie+s3"]);
+  const supported = new Set([
+    "hadoop+local",
+    "hadoop+s3",
+    "hadoop+gcs",
+    "hadoop+azure",
+    "rest+s3",
+    "rest+minio",
+    "rest+gcs",
+    "rest+azure",
+    "glue+s3",
+    "hive+s3",
+    "hive+gcs",
+    "hive+azure",
+    "nessie+s3",
+    "nessie+gcs",
+    "nessie+azure",
+  ]);
   if (supported.has(key)) return { valid: true };
   if (form.catalogProvider === "glue") return { valid: false, message: "AWS Glue requires AWS S3 storage." };
   return { valid: false, message: `${catalogLabel(form.catalogProvider)} with ${storageLabel(form.storageProvider)} is planned but not supported yet.` };
 }
 
 function formToProfile(form: FormState): ConnectionProfile {
-  const storageType: StorageType = form.storageProvider === "local" ? "local" : "s3";
+  const storageType = storageTypeFromForm(form);
+  const catalogType = form.catalogProvider as CatalogType;
   const queryEngine = resolveEngine(form);
-  const warehousePath = storageType === "local" ? form.warehousePath.trim() : buildWarehousePath(form);
+  const warehousePath = storageType === "local" || storageType === "gcs" || storageType === "azure" ? form.warehousePath.trim() : buildWarehousePath(form);
   return {
     id: form.id || newConnectionId(),
     name: form.name.trim(),
     warehousePath,
     storageType,
+    catalogType,
     queryEngine,
     s3: storageType === "s3" ? { region: optionalValue(form.region), endpoint: optionalValue(form.endpoint), pathStyle: form.pathStyle || form.storageProvider === "minio" } : null,
+    rest: catalogType === "rest" ? { url: form.restUrl.trim(), warehouse: optionalValue(form.restWarehouse), token: optionalValue(form.restToken) } : null,
+    glue: catalogType === "glue" ? { region: optionalValue(form.region), catalogId: optionalValue(form.catalogId) } : null,
+    hive: catalogType === "hive" ? { uri: form.hiveUri.trim() } : null,
+    nessie: catalogType === "nessie" ? { url: form.nessieUrl.trim(), branch: optionalValue(form.nessieBranch), token: optionalValue(form.restToken) } : null,
     athena: queryEngine === "athena" ? { database: optionalValue(form.athenaDatabase), workgroup: optionalValue(form.athenaWorkgroup), outputLocation: optionalValue(form.athenaOutputLocation) } : null,
   };
 }
@@ -1038,15 +1095,22 @@ function profileToForm(connection: ConnectionProfile): FormState {
     id: connection.id,
     kind: isS3 ? (connection.s3?.endpoint ? "minio" : "glue") : "local",
     name: connection.name,
-    warehousePath: connection.storageType === "local" ? connection.warehousePath : "",
-    storageProvider: isS3 ? (connection.s3?.endpoint ? "minio" : "s3") : "local",
-    catalogProvider: isS3 ? "glue" : "hadoop",
+    warehousePath: connection.storageType === "local" || connection.storageType === "gcs" || connection.storageType === "azure" ? connection.warehousePath : "",
+    storageProvider: storageProviderFromProfile(connection),
+    catalogProvider: connection.catalogType ?? (isS3 ? "glue" : "hadoop"),
     engineChoice: connection.queryEngine,
     bucket: parsed.bucket,
     warehousePrefix: parsed.prefix,
     region: connection.s3?.region ?? "us-east-1",
     endpoint: connection.s3?.endpoint ?? "",
     pathStyle: connection.s3?.pathStyle ?? false,
+    restUrl: connection.rest?.url ?? "",
+    restWarehouse: connection.rest?.warehouse ?? "",
+    restToken: connection.rest?.token ?? connection.nessie?.token ?? "",
+    catalogId: connection.glue?.catalogId ?? "",
+    hiveUri: connection.hive?.uri ?? "",
+    nessieUrl: connection.nessie?.url ?? "",
+    nessieBranch: connection.nessie?.branch ?? "main",
     athenaDatabase: connection.athena?.database ?? "",
     athenaWorkgroup: connection.athena?.workgroup ?? "primary",
     athenaOutputLocation: connection.athena?.outputLocation ?? "",
@@ -1061,6 +1125,7 @@ function resolveEngine(form: FormState): QueryEngine {
 
 function buildWarehousePath(form: FormState) {
   if (form.storageProvider === "local") return form.warehousePath.trim();
+  if (form.storageProvider === "gcs" || form.storageProvider === "azure") return form.warehousePath.trim();
   const prefix = form.warehousePrefix.trim().replace(/^\/+|\/+$/g, "");
   return `s3://${form.bucket.trim()}${prefix ? `/${prefix}` : ""}`;
 }
@@ -1138,8 +1203,7 @@ function formatStorage(connection: ConnectionProfile) {
 }
 
 function formatCatalog(connection: ConnectionProfile) {
-  if (connection.queryEngine === "athena") return "AWS Glue";
-  return connection.storageType === "local" ? "Hadoop" : "REST/S3";
+  return catalogLabel(connection.catalogType ?? (connection.storageType === "local" ? "hadoop" : "rest"));
 }
 
 function formatStorageFromForm(form: FormState) {
@@ -1154,7 +1218,7 @@ function storageLabel(storage: StorageProvider) {
   return storageOptions().find((option) => option.value === storage)?.label ?? storage;
 }
 
-function catalogLabel(catalog: CatalogProvider) {
+function catalogLabel(catalog: CatalogProvider | string) {
   return catalogOptions().find((option) => option.value === catalog)?.label ?? catalog;
 }
 
@@ -1171,6 +1235,20 @@ function formatEngine(engine: QueryEngine) {
 function optionalValue(value: string) {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+}
+
+function storageTypeFromForm(form: FormState): StorageType {
+  if (form.storageProvider === "local") return "local";
+  if (form.storageProvider === "gcs") return "gcs";
+  if (form.storageProvider === "azure") return "azure";
+  return "s3";
+}
+
+function storageProviderFromProfile(connection: ConnectionProfile): StorageProvider {
+  if (connection.storageType === "local") return "local";
+  if (connection.storageType === "gcs") return "gcs";
+  if (connection.storageType === "azure") return "azure";
+  return connection.s3?.endpoint ? "minio" : "s3";
 }
 
 function getErrorMessage(error: unknown) {

@@ -100,7 +100,7 @@ pub fn object_store(config: &S3WarehouseConfig) -> anyhow::Result<Arc<dyn Object
     Ok(Arc::new(builder.build()?))
 }
 
-fn parse_s3_uri(uri: &str) -> anyhow::Result<(String, String)> {
+pub fn parse_s3_uri(uri: &str) -> anyhow::Result<(String, String)> {
     let normalized = uri
         .strip_prefix("s3://")
         .or_else(|| uri.strip_prefix("s3a://"))
