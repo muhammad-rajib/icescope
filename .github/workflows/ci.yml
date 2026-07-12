@@ -2,15 +2,33 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - develop
+      - main
+
   pull_request:
+    branches:
+      - develop
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    name: Test every push and pull request
-    runs-on: ubuntu-latest
+    name: Application checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install Linux desktop dependencies
         run: |
@@ -21,16 +39,22 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
 
       - name: Install frontend dependencies
         run: npm ci
@@ -47,46 +71,95 @@ jobs:
       - name: Production frontend build
         run: npm run build
 
+      - name: Documentation build
+        run: npm run docs:build
+
       - name: Rust formatting
         run: cargo fmt --all -- --check
 
-      - name: Rust clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Rust Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Rust tests
-        run: cargo test --workspace
+        run: cargo test --workspace --all-features
+
+      - name: Rust check
+        run: cargo check --workspace --all-targets --all-features
 
   minio:
     name: MinIO integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
 
       - name: Start MinIO
         run: |
-          docker run -d --name icescope-minio \
+          docker run -d \
+            --name icescope-minio \
             -p 9000:9000 \
             -p 9001:9001 \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            minio/minio:latest server /data --console-address ":9001"
+            minio/minio:latest \
+            server /data --console-address ":9001"
+
           for i in {1..30}; do
-            curl -fsS http://127.0.0.1:9000/minio/health/live && exit 0
+            if curl -fsS http://127.0.0.1:9000/minio/health/live; then
+              echo "MinIO is ready"
+              exit 0
+            fi
+
             sleep 2
           done
+
           docker logs icescope-minio
           exit 1
 
-      - name: Create MinIO bucket
+      - name: Create MinIO test bucket
         run: |
-          docker run --rm --network host minio/mc:latest \
-            sh -c 'mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb -p local/icescope'
+          docker run --rm \
+            --network host \
+            minio/mc:latest \
+            sh -c '
+              mc alias set local \
+                http://127.0.0.1:9000 \
+                minioadmin \
+                minioadmin &&
+              mc mb --ignore-existing local/icescope
+            '
 
-      - name: Run ignored MinIO integration tests
+      - name: Run MinIO integration tests
         env:
           AWS_ACCESS_KEY_ID: minioadmin
           AWS_SECRET_ACCESS_KEY: minioadmin
           AWS_REGION: us-east-1
-        run: cargo test -p icescope-core --test minio_s3 -- --ignored --nocapture
+          AWS_ENDPOINT_URL: http://127.0.0.1:9000
+          AWS_ALLOW_HTTP: "true"
+          AWS_S3_FORCE_PATH_STYLE: "true"
+        run: |
+          cargo test \
+            -p icescope-core \
+            --test minio_s3 \
+            -- \
+            --ignored \
+            --nocapture
+
+      - name: Show MinIO logs on failure
+        if: failure()
+        run: docker logs icescope-minio
+
+      - name: Stop MinIO
+        if: always()
+        run: docker rm -f icescope-minio || true
