@@ -1,9 +1,9 @@
 use icescope_core::catalog;
 use icescope_core::{ConnectionProfile, QueryEngine, S3Settings, StorageType};
 
-#[tokio::test]
+#[test]
 #[ignore = "requires MinIO at localhost:9000 and AWS-style credentials"]
-async fn minio_s3_catalog_lists_namespaces_and_tables() {
+fn minio_s3_catalog_lists_namespaces_and_tables() {
     std::env::set_var("AWS_ACCESS_KEY_ID", "minioadmin");
     std::env::set_var("AWS_SECRET_ACCESS_KEY", "minioadmin");
     std::env::set_var("AWS_REGION", "us-east-1");
@@ -22,7 +22,7 @@ async fn minio_s3_catalog_lists_namespaces_and_tables() {
         athena: None,
     };
 
-    seed_minio_fixture(&profile).await;
+    seed_minio_fixture(&profile);
 
     let namespaces = catalog::list_namespaces(&profile).expect("namespaces list");
     let tables = catalog::list_tables(&profile, "analytics").expect("tables list");
@@ -33,17 +33,20 @@ async fn minio_s3_catalog_lists_namespaces_and_tables() {
     assert!(tables.iter().any(|table| table.name == "events"));
 }
 
-async fn seed_minio_fixture(profile: &ConnectionProfile) {
+fn seed_minio_fixture(profile: &ConnectionProfile) {
     use icescope_core::storage::s3::{config_from_warehouse, opendal_operator};
+    use icescope_core::storage::s3_exec;
 
     let config = config_from_warehouse(&profile.warehouse_path, profile.s3.as_ref())
         .expect("s3 config builds");
     let op = opendal_operator(&config).expect("operator builds");
 
-    op.create_dir("analytics/events/metadata/")
-        .await
-        .expect("metadata dir creates");
-    op.write("analytics/events/metadata/v1.metadata.json", "{}")
-        .await
-        .expect("metadata writes");
+    s3_exec::block_on(async {
+        op.create_dir("analytics/events/metadata/")
+            .await
+            .expect("metadata dir creates");
+        op.write("analytics/events/metadata/v1.metadata.json", "{}")
+            .await
+            .expect("metadata writes");
+    });
 }
