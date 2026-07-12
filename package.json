@@ -14,9 +14,10 @@
     "tauri:build": "tauri build",
     "test": "vitest run",
     "check": "tsc --noEmit",
-    "docs:dev": "npx vitepress@1.6.4 dev docs",
-    "docs:build": "npx vitepress@1.6.4 build docs",
-    "docs:preview": "npx vitepress@1.6.4 preview docs"
+    "typecheck": "tsc --noEmit",
+    "docs:dev": "npx --yes vitepress@1.6.4 dev docs",
+    "docs:build": "npx --yes vitepress@1.6.4 build docs",
+    "docs:preview": "npx --yes vitepress@1.6.4 preview docs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

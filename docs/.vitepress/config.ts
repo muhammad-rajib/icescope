@@ -1,6 +1,4 @@
-import { defineConfig } from "vitepress";
-
-export default defineConfig({
+export default {
   title: "IceScope",
   description: "Cross-platform desktop explorer for Apache Iceberg",
   base: "/icescope/",
@@ -10,6 +8,7 @@ export default defineConfig({
   ignoreDeadLinks: false,
   head: [
     ["link", { rel: "icon", href: "/icescope/logo.png" }],
+    ["link", { rel: "stylesheet", href: "/icescope/custom.css" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:title", content: "IceScope" }],
     [
@@ -85,4 +84,4 @@ export default defineConfig({
       text: "Edit this page on GitHub",
     },
   },
-});
+};
