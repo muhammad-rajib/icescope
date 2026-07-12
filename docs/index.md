@@ -5,8 +5,8 @@ Explore Apache Iceberg catalogs, metadata, and data from one desktop application
 IceScope is a modern, open-source, cross-platform desktop explorer for Apache Iceberg. It helps data engineers and platform teams browse local Iceberg warehouses, inspect schemas and snapshots, preview table data, and run SQL from a fast Tauri desktop app.
 
 <p>
-  <a class="vp-button brand" href="/icescope/download">Download IceScope</a>
-  <a class="vp-button alt" href="/icescope/getting-started">Get Started</a>
+  <a class="vp-button brand" href="/download">Download IceScope</a>
+  <a class="vp-button alt" href="/getting-started">Get Started</a>
   <a class="vp-button alt" href="https://github.com/muhammad-rajib/icescope">View on GitHub</a>
 </p>
 
@@ -18,7 +18,7 @@ IceScope is a modern, open-source, cross-platform desktop explorer for Apache Ic
       Built with React, TypeScript, Rust, and Tauri, IceScope brings database-tool ergonomics to Apache Iceberg exploration.
     </p>
   </div>
-  <img src="/icescope/screenshots/icescope-installed-image.png" alt="IceScope iceberg application image" />
+  <img src="/screenshots/icescope-installed-image.png" alt="IceScope iceberg application image" />
 </div>
 
 ## Features
@@ -85,4 +85,4 @@ IceScope is Apache-2.0 licensed and built in public. If the project helps you in
 
 - [Star IceScope on GitHub](https://github.com/muhammad-rajib/icescope)
 - [Report an issue](https://github.com/muhammad-rajib/icescope/issues)
-- [Read the contribution guide](/icescope/contributing)
+- [Read the contribution guide](/contributing)
