@@ -1,5 +1,5 @@
 use icescope_core::catalog;
-use icescope_core::{ConnectionProfile, QueryEngine, S3Settings, StorageType};
+use icescope_core::{CatalogType, ConnectionProfile, QueryEngine, S3Settings, StorageType};
 
 #[test]
 #[ignore = "requires MinIO at localhost:9000 and AWS-style credentials"]
@@ -13,12 +13,17 @@ fn minio_s3_catalog_lists_namespaces_and_tables() {
         name: "MinIO".to_string(),
         warehouse_path: "s3://icescope/warehouse".to_string(),
         storage_type: StorageType::S3,
+        catalog_type: CatalogType::Hadoop,
         query_engine: QueryEngine::Datafusion,
         s3: Some(S3Settings {
             region: Some("us-east-1".to_string()),
             endpoint: Some("http://127.0.0.1:9000".to_string()),
             path_style: true,
         }),
+        rest: None,
+        glue: None,
+        hive: None,
+        nessie: None,
         athena: None,
     };
 

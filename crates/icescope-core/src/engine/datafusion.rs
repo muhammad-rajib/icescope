@@ -1,6 +1,7 @@
 use crate::engine::pruning;
 use crate::iceberg::scan;
 use crate::models::{ConnectionProfile, QueryPage, SnapshotScanResult, StorageType};
+use crate::storage::s3::{config_from_warehouse, object_store};
 use anyhow::{anyhow, Context};
 use arrow::array::Array;
 use arrow::record_batch::RecordBatch;
@@ -9,7 +10,8 @@ use datafusion::datasource::file_format::parquet::ParquetFormat;
 use datafusion::datasource::listing::{
     ListingOptions, ListingTable, ListingTableConfig, ListingTableUrl,
 };
-use datafusion::prelude::SessionContext;
+use datafusion::execution::object_store::ObjectStoreUrl;
+use datafusion::prelude::{SessionConfig, SessionContext};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -25,22 +27,33 @@ pub async fn execute_page(
     page_size: usize,
     offset: usize,
 ) -> anyhow::Result<QueryPage> {
-    if !matches!(profile.storage_type, StorageType::Local) {
+    if !matches!(profile.storage_type, StorageType::Local | StorageType::S3) {
         return Err(anyhow!(
-            "DataFusion local queries currently require a local connection"
+            "DataFusion queries currently require a local or S3 connection"
         ));
     }
 
     let bounded_page_size = page_size.clamp(50, 1000);
-    let warehouse = resolve_warehouse_path(&profile.warehouse_path)?;
     let table_refs = find_table_refs(sql)?;
-    let ctx = SessionContext::new();
+    let ctx = production_context();
+    if matches!(profile.storage_type, StorageType::S3) {
+        register_s3_object_store(&ctx, profile)?;
+    }
 
     for table_ref in &table_refs {
         let table_key = format!("{}.{}", table_ref.namespace, table_ref.table);
         let scan = if let Some(scan) = snapshot_scans.and_then(|scans| scans.get(&table_key)) {
             scan.clone()
+        } else if matches!(profile.storage_type, StorageType::S3) {
+            scan::current_snapshot_data_files_s3(
+                &profile.warehouse_path,
+                profile.s3.as_ref(),
+                &table_ref.namespace,
+                &table_ref.table,
+            )
+            .await?
         } else {
+            let warehouse = resolve_warehouse_path(&profile.warehouse_path)?;
             scan::current_snapshot_data_files(&warehouse, &table_ref.namespace, &table_ref.table)?
         };
         let (files, stats) = pruning::prune_files(sql, scan.files);
@@ -73,6 +86,36 @@ pub async fn execute_page(
         offset,
         has_more,
     })
+}
+
+fn production_context() -> SessionContext {
+    let target_partitions = std::thread::available_parallelism()
+        .map(|value| value.get().saturating_mul(4))
+        .unwrap_or(16)
+        .clamp(8, 128);
+    let config = SessionConfig::new()
+        .with_target_partitions(target_partitions)
+        .with_batch_size(8192)
+        .with_repartition_file_scans(true)
+        .with_repartition_joins(true)
+        .with_repartition_aggregations(true)
+        .with_repartition_sorts(true)
+        .with_parquet_pruning(true)
+        .with_parquet_bloom_filter_pruning(true)
+        .with_parquet_page_index_pruning(true)
+        .with_collect_statistics(false);
+
+    SessionContext::new_with_config(config)
+}
+
+fn register_s3_object_store(
+    ctx: &SessionContext,
+    profile: &ConnectionProfile,
+) -> anyhow::Result<()> {
+    let config = config_from_warehouse(&profile.warehouse_path, profile.s3.as_ref())?;
+    let store_url = ObjectStoreUrl::parse(format!("s3://{}", config.bucket))?;
+    ctx.register_object_store(store_url.as_ref(), object_store(&config)?);
+    Ok(())
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]

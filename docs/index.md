@@ -77,11 +77,11 @@ IceScope is currently an early preview. Some installers may be unsigned.
 | --- | --- | --- |
 | Local Hadoop catalog | <span class="badge available">Available</span> | Local Iceberg warehouse directory with metadata and Parquet files. |
 | Local filesystem warehouse | <span class="badge available">Available</span> | Best path for first-time testing and local demos. |
-| S3 / MinIO object storage | <span class="badge experimental">Experimental</span> | Foundations exist; expect rough edges in preview builds. |
-| REST Catalog | <span class="badge planned">Planned</span> | Documented as a target integration. |
-| AWS Glue | <span class="badge planned">Planned</span> | Planned catalog integration for AWS deployments. |
-| Nessie | <span class="badge planned">Planned</span> | Planned versioned catalog support. |
-| GCS / Azure | <span class="badge planned">Planned</span> | Planned cloud storage integrations. |
+| S3 / MinIO object storage | <span class="badge experimental">Experimental</span> | Hadoop-style warehouse discovery over S3-compatible object storage. |
+| REST Catalog | <span class="badge experimental">Preview</span> | Namespace and table discovery through Iceberg REST `/v1` APIs. |
+| AWS Glue | <span class="badge planned">Configured</span> | First-class catalog profile; native Glue API client is not enabled in this build. |
+| Nessie | <span class="badge experimental">Preview</span> | Branch-aware discovery through Nessie Iceberg REST routing. |
+| GCS / Azure | <span class="badge planned">Configured</span> | Profile alignment exists; storage backends are not enabled in this build. |
 
 ## Open source
 

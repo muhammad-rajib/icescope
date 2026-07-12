@@ -1,4 +1,5 @@
-export type StorageType = "local" | "s3";
+export type StorageType = "local" | "s3" | "gcs" | "azure";
+export type CatalogType = "hadoop" | "rest" | "glue" | "hive" | "nessie";
 export type QueryEngine = "datafusion" | "duckdb" | "athena";
 
 export type SelectedTable = {
@@ -11,8 +12,13 @@ export type ConnectionProfile = {
   name: string;
   warehousePath: string;
   storageType: StorageType;
+  catalogType: CatalogType;
   queryEngine: QueryEngine;
   s3?: S3Settings | null;
+  rest?: RestCatalogSettings | null;
+  glue?: GlueCatalogSettings | null;
+  hive?: HiveCatalogSettings | null;
+  nessie?: NessieCatalogSettings | null;
   athena?: AthenaSettings | null;
 };
 
@@ -26,6 +32,27 @@ export type AthenaSettings = {
   database?: string | null;
   workgroup?: string | null;
   outputLocation?: string | null;
+};
+
+export type RestCatalogSettings = {
+  url: string;
+  warehouse?: string | null;
+  token?: string | null;
+};
+
+export type GlueCatalogSettings = {
+  region?: string | null;
+  catalogId?: string | null;
+};
+
+export type HiveCatalogSettings = {
+  uri: string;
+};
+
+export type NessieCatalogSettings = {
+  url: string;
+  branch?: string | null;
+  token?: string | null;
 };
 
 export type NamespaceInfo = {

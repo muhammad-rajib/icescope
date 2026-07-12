@@ -1,6 +1,6 @@
 #[test]
 fn local_catalog_lists_namespaced_fixture_tables() {
-    use icescope_core::{catalog, ConnectionProfile, QueryEngine, StorageType};
+    use icescope_core::{catalog, CatalogType, ConnectionProfile, QueryEngine, StorageType};
 
     let profile = ConnectionProfile {
         id: "fixture".to_string(),
@@ -10,8 +10,13 @@ fn local_catalog_lists_namespaced_fixture_tables() {
             env!("CARGO_MANIFEST_DIR")
         ),
         storage_type: StorageType::Local,
+        catalog_type: CatalogType::Hadoop,
         query_engine: QueryEngine::Datafusion,
         s3: None,
+        rest: None,
+        glue: None,
+        hive: None,
+        nessie: None,
         athena: None,
     };
 
@@ -60,7 +65,7 @@ fn local_catalog_lists_root_tables_as_default_namespace() {
 #[test]
 fn connection_profiles_round_trip_through_sqlite() {
     use icescope_core::db::AppDb;
-    use icescope_core::{ConnectionProfile, QueryEngine, StorageType};
+    use icescope_core::{CatalogType, ConnectionProfile, QueryEngine, StorageType};
 
     let db = AppDb::in_memory().expect("database opens");
     let profile = ConnectionProfile {
@@ -68,8 +73,13 @@ fn connection_profiles_round_trip_through_sqlite() {
         name: "Local Dev".to_string(),
         warehouse_path: "/tmp/warehouse".to_string(),
         storage_type: StorageType::Local,
+        catalog_type: CatalogType::Hadoop,
         query_engine: QueryEngine::Datafusion,
         s3: None,
+        rest: None,
+        glue: None,
+        hive: None,
+        nessie: None,
         athena: None,
     };
 
@@ -90,7 +100,7 @@ fn connection_profiles_round_trip_through_sqlite() {
 fn metadata_and_query_caches_invalidate_with_connection() {
     use icescope_core::cache::CacheKind;
     use icescope_core::db::AppDb;
-    use icescope_core::{ConnectionProfile, QueryEngine, QueryPage, StorageType};
+    use icescope_core::{CatalogType, ConnectionProfile, QueryEngine, QueryPage, StorageType};
     use std::collections::BTreeMap;
 
     let db = AppDb::in_memory().expect("database opens");
@@ -99,8 +109,13 @@ fn metadata_and_query_caches_invalidate_with_connection() {
         name: "Local Dev".to_string(),
         warehouse_path: "/tmp/warehouse".to_string(),
         storage_type: StorageType::Local,
+        catalog_type: CatalogType::Hadoop,
         query_engine: QueryEngine::Datafusion,
         s3: None,
+        rest: None,
+        glue: None,
+        hive: None,
+        nessie: None,
         athena: None,
     };
     let page = QueryPage {

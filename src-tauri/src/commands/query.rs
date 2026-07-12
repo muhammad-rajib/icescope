@@ -32,8 +32,8 @@ pub async fn run_query(
             .ok_or_else(|| format!("Connection not found: {connection_id}"))?
     };
 
-    let snapshot_scans = if matches!(profile.storage_type, StorageType::Local) {
-        preload_snapshot_scans(&state, &profile.warehouse_path, &connection_id, &sql)?
+    let snapshot_scans = if matches!(profile.storage_type, StorageType::Local | StorageType::S3) {
+        preload_snapshot_scans(&state, &profile, &connection_id, &sql).await?
     } else {
         BTreeMap::new()
     };
@@ -61,46 +61,94 @@ fn friendly_query_error(storage_type: &StorageType, error: &str) -> String {
     sql_error
 }
 
-fn preload_snapshot_scans(
+async fn preload_snapshot_scans(
     state: &State<'_, AppState>,
-    warehouse_path: &str,
+    profile: &icescope_core::ConnectionProfile,
     connection_id: &str,
     sql: &str,
 ) -> Result<BTreeMap<String, SnapshotScanResult>, String> {
-    let warehouse = resolve_warehouse_path(warehouse_path).map_err(|error| error.to_string())?;
     let table_refs = parse_table_refs(sql).map_err(|error| error.to_string())?;
-    let db = state.db.lock().map_err(|error| error.to_string())?;
     let mut scans = BTreeMap::new();
 
     for table_ref in table_refs {
         let table_key = format!("{}.{}", table_ref.namespace, table_ref.table);
-        if let Some(scan) = db
-            .get_snapshot_scan_cache(connection_id, &table_key)
-            .map_err(|error| error.to_string())?
         {
-            scans.insert(table_key, scan);
-            continue;
+            let db = state.db.lock().map_err(|error| error.to_string())?;
+            if let Some(scan) = db
+                .get_snapshot_scan_cache(connection_id, &table_key)
+                .map_err(|error| error.to_string())?
+            {
+                scans.insert(table_key, scan);
+                continue;
+            }
         }
 
-        if db
-            .get_snapshot_urls_cache(connection_id, &table_key)
-            .map_err(|error| error.to_string())?
-            .is_none()
         {
-            let snapshot_urls = scan::current_snapshot_manifest_urls(
-                &warehouse,
+            let has_snapshot_urls = state
+                .db
+                .lock()
+                .map_err(|error| error.to_string())?
+                .get_snapshot_urls_cache(connection_id, &table_key)
+                .map_err(|error| error.to_string())?
+                .is_some();
+
+            if !has_snapshot_urls {
+                let snapshot_urls = match profile.storage_type {
+                    StorageType::Local => {
+                        let warehouse = resolve_warehouse_path(&profile.warehouse_path)
+                            .map_err(|error| error.to_string())?;
+                        scan::current_snapshot_manifest_urls(
+                            &warehouse,
+                            &table_ref.namespace,
+                            &table_ref.table,
+                        )
+                        .map_err(|error| error.to_string())?
+                    }
+                    StorageType::S3 => scan::current_snapshot_manifest_urls_s3(
+                        &profile.warehouse_path,
+                        profile.s3.as_ref(),
+                        &table_ref.namespace,
+                        &table_ref.table,
+                    )
+                    .await
+                    .map_err(|error| error.to_string())?,
+                    _ => Vec::new(),
+                };
+                state
+                    .db
+                    .lock()
+                    .map_err(|error| error.to_string())?
+                    .put_snapshot_urls_cache(connection_id, &table_key, &snapshot_urls)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+
+        let scan = match profile.storage_type {
+            StorageType::Local => {
+                let warehouse = resolve_warehouse_path(&profile.warehouse_path)
+                    .map_err(|error| error.to_string())?;
+                scan::current_snapshot_data_files(
+                    &warehouse,
+                    &table_ref.namespace,
+                    &table_ref.table,
+                )
+                .map_err(|error| error.to_string())?
+            }
+            StorageType::S3 => scan::current_snapshot_data_files_s3(
+                &profile.warehouse_path,
+                profile.s3.as_ref(),
                 &table_ref.namespace,
                 &table_ref.table,
             )
-            .map_err(|error| error.to_string())?;
-            db.put_snapshot_urls_cache(connection_id, &table_key, &snapshot_urls)
-                .map_err(|error| error.to_string())?;
-        }
-
-        let scan =
-            scan::current_snapshot_data_files(&warehouse, &table_ref.namespace, &table_ref.table)
-                .map_err(|error| error.to_string())?;
-        db.put_snapshot_scan_cache(connection_id, &table_key, &scan)
+            .await
+            .map_err(|error| error.to_string())?,
+            _ => continue,
+        };
+        state
+            .db
+            .lock()
+            .map_err(|error| error.to_string())?
+            .put_snapshot_scan_cache(connection_id, &table_key, &scan)
             .map_err(|error| error.to_string())?;
         scans.insert(table_key, scan);
     }

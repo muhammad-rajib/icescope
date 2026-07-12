@@ -1,5 +1,8 @@
 use crate::models::{ColumnInfo, PartitionField, SnapshotInfo, TableMetadata};
+use crate::storage::s3::{config_from_warehouse, object_store};
 use anyhow::{anyhow, Context};
+use futures::TryStreamExt;
+use object_store::{path::Path as ObjectPath, ObjectStore};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -64,6 +67,45 @@ pub fn load_table_metadata(
     let metadata: IcebergMetadataJson = serde_json::from_str(&contents)
         .with_context(|| format!("failed to parse table metadata {}", metadata_path.display()))?;
 
+    build_table_metadata(namespace, table, metadata)
+}
+
+pub async fn load_table_metadata_s3(
+    warehouse_uri: &str,
+    settings: Option<&crate::models::S3Settings>,
+    namespace: &str,
+    table: &str,
+) -> anyhow::Result<TableMetadata> {
+    let config = config_from_warehouse(warehouse_uri, settings)?;
+    let store = object_store(&config)?;
+    let metadata_key =
+        latest_metadata_key_s3(store.as_ref(), &config.root, namespace, table).await?;
+    let bytes = store
+        .get(&ObjectPath::from(metadata_key.as_str()))
+        .await
+        .with_context(|| {
+            format!(
+                "failed to read table metadata s3://{}/{}",
+                config.bucket, metadata_key
+            )
+        })?
+        .bytes()
+        .await?;
+    let metadata: IcebergMetadataJson = serde_json::from_slice(&bytes).with_context(|| {
+        format!(
+            "failed to parse table metadata s3://{}/{}",
+            config.bucket, metadata_key
+        )
+    })?;
+
+    build_table_metadata(namespace, table, metadata)
+}
+
+fn build_table_metadata(
+    namespace: &str,
+    table: &str,
+    metadata: IcebergMetadataJson,
+) -> anyhow::Result<TableMetadata> {
     let schema = metadata
         .schemas
         .iter()
@@ -117,6 +159,66 @@ pub fn load_table_metadata(
         properties: metadata.properties.unwrap_or_default(),
         partitions,
     })
+}
+
+async fn latest_metadata_key_s3(
+    store: &dyn ObjectStore,
+    root: &str,
+    namespace: &str,
+    table: &str,
+) -> anyhow::Result<String> {
+    let metadata_dir = join_s3_key(root, &format!("{namespace}/{table}/metadata"));
+    let version_hint = join_s3_key(&metadata_dir, "version-hint.text");
+
+    if let Ok(bytes) = store.get(&ObjectPath::from(version_hint.as_str())).await {
+        if let Ok(bytes) = bytes.bytes().await {
+            if let Ok(version_hint) = std::str::from_utf8(&bytes) {
+                if let Ok(version) = version_hint.trim().parse::<u32>() {
+                    let key = join_s3_key(&metadata_dir, &format!("v{version}.metadata.json"));
+                    if store.head(&ObjectPath::from(key.as_str())).await.is_ok() {
+                        return Ok(key);
+                    }
+                }
+            }
+        }
+    }
+
+    let prefix = ObjectPath::from(metadata_dir.as_str());
+    let mut stream = store.list(Some(&prefix));
+    let mut latest: Option<(u32, String)> = None;
+
+    while let Some(meta) = stream.try_next().await? {
+        let key = meta.location.to_string();
+        let Some(version) = metadata_version_from_key(&key) else {
+            continue;
+        };
+        if latest
+            .as_ref()
+            .is_none_or(|(current, _)| version > *current)
+        {
+            latest = Some((version, key));
+        }
+    }
+
+    latest
+        .map(|(_, key)| key)
+        .ok_or_else(|| anyhow!("No vN.metadata.json found in S3 metadata directory {metadata_dir}"))
+}
+
+fn join_s3_key(left: &str, right: &str) -> String {
+    match (left.trim_matches('/'), right.trim_matches('/')) {
+        ("", right) => right.to_string(),
+        (left, "") => left.to_string(),
+        (left, right) => format!("{left}/{right}"),
+    }
+}
+
+fn metadata_version_from_key(key: &str) -> Option<u32> {
+    key.rsplit('/')
+        .next()
+        .and_then(|name| name.strip_prefix('v'))
+        .and_then(|name| name.strip_suffix(".metadata.json"))
+        .and_then(|version| version.parse().ok())
 }
 
 fn latest_metadata_path(warehouse: &Path, namespace: &str, table: &str) -> anyhow::Result<PathBuf> {
