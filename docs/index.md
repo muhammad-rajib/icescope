@@ -5,10 +5,14 @@ Explore Apache Iceberg catalogs, metadata, and data from one desktop application
 IceScope is a modern, open-source, cross-platform desktop explorer for Apache Iceberg. It helps data engineers and platform teams browse local Iceberg warehouses, inspect schemas and snapshots, preview table data, and run SQL from a fast Tauri desktop app.
 
 <p>
-  <a class="vp-button brand" href="/download">Download IceScope</a>
-  <a class="vp-button alt" href="/getting-started">Get Started</a>
+  <a class="vp-button brand" href="/icescope/download">Download IceScope</a>
+  <a class="vp-button alt" href="/icescope/getting-started">Get Started</a>
   <a class="vp-button alt" href="https://github.com/muhammad-rajib/icescope">View on GitHub</a>
 </p>
+
+::: warning Preview notice
+IceScope is currently an early preview. Some installers may be unsigned.
+:::
 
 <div class="product-hero">
   <div class="product-copy">
@@ -50,20 +54,20 @@ IceScope is a modern, open-source, cross-platform desktop explorer for Apache Ic
   </div>
 </div>
 
-## Supported platforms
+## Available For
 
 <div class="status-grid">
   <div class="status-card">
     <strong>macOS</strong>
-    <p>Apple Silicon and Intel preview builds are planned through GitHub Releases.</p>
+    <p>Apple Silicon preview builds are available. Intel DMGs are published when the release includes an Intel asset.</p>
   </div>
   <div class="status-card">
     <strong>Windows</strong>
-    <p>Preview installer builds are planned for EXE and MSI packages.</p>
+    <p>Preview installer builds are published as EXE and MSI packages.</p>
   </div>
   <div class="status-card">
     <strong>Linux</strong>
-    <p>Preview packages are planned for AppImage, DEB, and RPM formats.</p>
+    <p>Preview packages are published as AppImage, DEB, and RPM assets.</p>
   </div>
 </div>
 

@@ -34,6 +34,14 @@ jobs:
             label: linux-x64
 
     runs-on: ${{ matrix.platform }}
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: "-"
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,6 +68,30 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Import Apple Developer certificate
+        if: startsWith(matrix.platform, 'macos') && env.APPLE_CERTIFICATE != '' && env.APPLE_CERTIFICATE_PASSWORD != '' && env.KEYCHAIN_PASSWORD != ''
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security find-identity -v -p codesigning build.keychain
+
+      - name: Resolve Apple signing identity
+        if: startsWith(matrix.platform, 'macos') && env.APPLE_CERTIFICATE != '' && env.APPLE_CERTIFICATE_PASSWORD != '' && env.KEYCHAIN_PASSWORD != ''
+        run: |
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -E '"(Developer ID Application|Apple Distribution|Apple Development):' | head -n 1 || true)
+          if [ -z "$CERT_INFO" ]; then
+            echo "No Apple signing identity found in build keychain."
+            exit 1
+          fi
+          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
+          echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> "$GITHUB_ENV"
+          echo "Using signing identity: $CERT_ID"
+
       - name: Install frontend dependencies
         run: npm ci
 
@@ -67,6 +99,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ env.APPLE_ID }}
+          APPLE_PASSWORD: ${{ env.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID }}
+          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
         with:
           args: ${{ matrix.args }}
           tagName: ${{ github.ref_name }}
@@ -76,6 +112,11 @@ jobs:
 
             - First public IceScope preview build.
             - Native installers for macOS, Windows, and Linux.
+
+            ## Installation
+
+            Download and installation guide:
+            https://muhammad-rajib.github.io/icescope/download/
 
             ## Bug fixes
 
@@ -88,6 +129,33 @@ jobs:
 
             ## Checksums
 
-            Checksums should be generated and attached before promoting this draft release.
+            SHA-256 checksums are attached as `SHA256SUMS.txt` when all platform jobs finish.
           releaseDraft: true
           prerelease: true
+
+  checksums:
+    name: Generate release checksums
+    needs: build
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release-assets
+          gh release download "${{ github.ref_name }}" --dir release-assets --clobber
+
+      - name: Generate SHA256SUMS.txt
+        run: |
+          cd release-assets
+          find . -type f ! -name 'SHA256SUMS.txt' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Attach checksums to draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" release-assets/SHA256SUMS.txt --clobber
