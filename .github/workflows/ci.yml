@@ -131,14 +131,9 @@ jobs:
         run: |
           docker run --rm \
             --network host \
+            -e MC_HOST_local=http://minioadmin:minioadmin@127.0.0.1:9000 \
             minio/mc:latest \
-            sh -c '
-              mc alias set local \
-                http://127.0.0.1:9000 \
-                minioadmin \
-                minioadmin &&
-              mc mb --ignore-existing local/icescope
-            '
+            mb --ignore-existing local/icescope
 
       - name: Run MinIO integration tests
         env:
