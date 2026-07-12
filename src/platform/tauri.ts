@@ -108,6 +108,8 @@ export const api = {
 
     return call<void>("delete_connection", { connectionId });
   },
+  selectWarehouseFolder: (defaultPath?: string) =>
+    call<string | null>("select_warehouse_folder", { defaultPath: defaultPath || null }),
   listNamespaces: (connectionId: string) => call<NamespaceInfo[]>("list_namespaces", { connectionId }),
   listTables: (connectionId: string, namespace: string) =>
     call<TableInfo[]>("list_tables", { connectionId, namespace }),

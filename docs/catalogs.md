@@ -1,27 +1,27 @@
 # Catalogs
 
-IceScope catalog configuration is separate from storage and query engine selection.
+Catalogs tell IceScope where namespaces, tables, and Iceberg metadata files live.
 
-## Hadoop Catalog
+## Current support
 
-Used for local and Hadoop-style Iceberg warehouse layouts.
+| Catalog | Status | Description |
+| --- | --- | --- |
+| Hadoop / local warehouse | Available | Resolves namespaces and tables from local directory layout. |
 
-## REST Catalog
+## Planned support
 
-Planned for Apache Polaris, Snowflake Polaris, and custom REST catalogs.
+| Catalog | Status | Description |
+| --- | --- | --- |
+| REST Catalog | Planned | Connect to Iceberg REST-compatible catalog services. |
+| AWS Glue | Planned | Discover Iceberg tables registered in Glue Data Catalog. |
+| Hive Metastore | Planned | Connect to existing HMS deployments. |
+| JDBC | Planned | Catalog metadata backed by relational databases. |
+| Nessie | Planned | Branch-aware and tag-aware Iceberg catalog browsing. |
 
-## AWS Glue
+## Catalog-relative paths
 
-Used with AWS S3 production environments.
+Iceberg metadata may reference data files using catalog-relative paths. IceScope resolves those paths against the configured warehouse when possible.
 
-## Hive Metastore
+## Metadata discovery
 
-Planned for HMS-backed Iceberg deployments.
-
-## Nessie
-
-Planned for branch-aware lakehouse workflows.
-
-## JDBC and Custom
-
-Reserved for advanced enterprise deployments.
+For local warehouses, IceScope searches table metadata directories, reads current table metadata, follows the current snapshot, and uses manifest files to discover active Parquet data files.

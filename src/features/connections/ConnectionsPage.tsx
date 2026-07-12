@@ -623,6 +623,17 @@ function GeneralStep({ form, setForm }: { form: FormState; setForm: (form: FormS
 }
 
 function StorageStep({ form, setForm }: { form: FormState; setForm: (form: FormState) => void }) {
+  async function browseWarehouseFolder() {
+    try {
+      const selected = await api.selectWarehouseFolder(form.warehousePath);
+      if (selected) {
+        setForm({ ...form, warehousePath: selected });
+      }
+    } catch (error) {
+      console.error("Failed to open warehouse folder picker", error);
+    }
+  }
+
   return (
     <section className="space-y-4">
       <SectionHeader title="Storage" description="Only required fields for the selected storage are shown." />
@@ -632,7 +643,11 @@ function StorageStep({ form, setForm }: { form: FormState; setForm: (form: FormS
       {form.storageProvider === "local" && (
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
           <TextField label="Warehouse Folder" value={form.warehousePath} onChange={(warehousePath) => setForm({ ...form, warehousePath })} placeholder="/path/to/warehouse" required />
-          <button className="mt-6 rounded-lg border border-border px-3 py-2 text-sm text-foreground/70 hover:bg-muted" type="button">
+          <button
+            className="mt-6 rounded-lg border border-border px-3 py-2 text-sm text-foreground/70 hover:bg-muted"
+            type="button"
+            onClick={() => void browseWarehouseFolder()}
+          >
             Browse
           </button>
         </div>

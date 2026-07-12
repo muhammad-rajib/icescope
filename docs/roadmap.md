@@ -1,34 +1,36 @@
 # Roadmap
 
+The roadmap is directional and may change based on user feedback.
+
 ## v0.1
 
-- Public repository structure.
-- Local Hadoop-style warehouse support.
-- S3 storage support.
-- Explorer table browser.
-- SQL Lab with DataFusion.
-- Overview dashboard.
-- Release workflows.
+- Local warehouse explorer.
+- DataFusion local queries.
+- Table data grid.
+- SQL Lab.
+- Metadata and snapshot inspection.
+- VitePress documentation site.
 
 ## v0.2
 
-- REST Catalog support.
-- Improved S3 credential diagnostics.
-- More robust Iceberg schema and partition rendering.
-- Signed release installers.
+- Improve S3 and MinIO stability.
+- Signed preview installers.
+- Better sample warehouses.
+- Richer table metadata views.
+- Query export improvements.
 
 ## v0.5
 
+- REST Catalog support.
 - AWS Glue support.
-- Hive Metastore support.
-- Nessie support.
-- Query plan visualization.
-- Advanced file pruning diagnostics.
+- Hive Metastore exploration.
+- More robust query engine routing.
+- Automatic update channel.
 
 ## v1.0
 
-- Stable public APIs.
-- Hardened cache format.
-- Documented plugin architecture.
-- Production-grade release signing and update flow.
-- Broad catalog compatibility.
+- Stable catalog abstraction.
+- Production-ready installers.
+- Documented support matrix.
+- Strong testing across local and cloud-backed warehouses.
+- Plugin-ready architecture.

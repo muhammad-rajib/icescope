@@ -1,53 +1,59 @@
-# Release Guide
+# Release Checklist
 
-This guide describes the first public release workflow for IceScope.
+Use this checklist for every IceScope release.
 
-## Versioning
+## Version Bump
 
-IceScope follows Semantic Versioning:
+- [ ] Choose a Semantic Versioning version, for example `0.1.0`.
+- [ ] Run `./scripts/release.sh <version>`.
+- [ ] Confirm versions match in `package.json`, `Cargo.toml`, and `src-tauri/tauri.conf.json`.
+- [ ] Confirm `CHANGELOG.md` has a dated release section.
 
-- `MAJOR` for incompatible changes.
-- `MINOR` for new functionality.
-- `PATCH` for bug fixes.
+## Tests
 
-The current first public release target is `0.1.0`.
+- [ ] Run `npm ci`.
+- [ ] Run `npm run lint`.
+- [ ] Run `npm run check`.
+- [ ] Run `npm test`.
+- [ ] Run `cargo fmt --all -- --check`.
+- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings`.
+- [ ] Run `cargo test --workspace`.
 
-Keep these files in sync:
+## Build
 
-- `package.json`
-- `Cargo.toml`
-- `src-tauri/tauri.conf.json`
-- `CHANGELOG.md`
+- [ ] Run `npm run build`.
+- [ ] Run `cargo build --workspace`.
+- [ ] Run `npm run tauri:build`.
+- [ ] Verify generated installers open on the target OS.
 
-## Pre-Release Checklist
+## Tag
 
-- [ ] Update `CHANGELOG.md`.
-- [ ] Confirm `README.md` screenshots and links.
-- [ ] Run `make test`.
-- [ ] Run `make check`.
-- [ ] Run `make build`.
-- [ ] Verify generated installers on each supported platform.
-- [ ] Tag the release as `vX.Y.Z`.
-
-## Release Commands
-
-```bash
-npm install
-npm run check
-npm test
-cargo fmt --all -- --check
-cargo test --workspace
-cargo check --workspace
-npm run tauri:build
-```
+- [ ] Push the version tag created by `scripts/release.sh`.
+- [ ] Confirm `.github/workflows/release.yml` starts for the tag.
 
 ## GitHub Release
 
-Pushing a `v*` tag triggers the release workflow:
+- [ ] Confirm the release is created as draft and prerelease.
+- [ ] Confirm macOS Apple Silicon artifact is attached.
+- [ ] Confirm macOS Intel artifact is attached.
+- [ ] Confirm Windows MSI/EXE artifacts are attached.
+- [ ] Confirm Linux AppImage/DEB/RPM artifacts are attached.
+- [ ] Confirm release notes include highlights, bug fixes, known issues, and checksums.
 
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
+## Verification
 
-The workflow builds native installers for Windows, macOS, and Linux and uploads artifacts to GitHub Releases.
+- [ ] Download every artifact from the draft release.
+- [ ] Install on a clean machine or VM.
+- [ ] Launch IceScope.
+- [ ] Add the sample data connection.
+- [ ] Open Explorer and SQL Lab.
+
+## Documentation
+
+- [ ] Confirm `README.md` links are current.
+- [ ] Confirm `docs/index.md` is published through GitHub Pages.
+- [ ] Confirm `CHANGELOG.md` is accurate.
+
+## Future Updater
+
+- [ ] Do not enable the Tauri updater until signing keys, update endpoint, and migration policy are finalized.

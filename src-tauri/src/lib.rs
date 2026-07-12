@@ -2,7 +2,7 @@ mod commands;
 mod state;
 
 use commands::{
-    connection::{delete_connection, list_connections, save_connection},
+    connection::{delete_connection, list_connections, save_connection, select_warehouse_folder},
     explorer::{get_table_metadata, get_table_preview, list_namespaces, list_tables},
     overview::{get_overview, refresh_overview},
     query::run_query,
@@ -21,8 +21,7 @@ pub fn run() {
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             let db_path = app_data_dir.join("icescope.db");
-            let db = AppDb::open(&db_path)
-                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+            let db = AppDb::open(&db_path).map_err(std::io::Error::other)?;
             app.manage(AppState::new(db));
             Ok(())
         })
@@ -30,6 +29,7 @@ pub fn run() {
             list_connections,
             save_connection,
             delete_connection,
+            select_warehouse_folder,
             list_namespaces,
             list_tables,
             get_table_metadata,

@@ -154,6 +154,7 @@ fn is_empty_table_metadata(metadata: &TableMetadata) -> bool {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn get_table_preview(
     state: State<'_, AppState>,
     connection_id: String,

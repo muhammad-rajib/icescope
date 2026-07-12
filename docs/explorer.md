@@ -1,35 +1,62 @@
 # Explorer
 
-The Explorer page is the primary table browsing workflow.
+Explorer is the table browser for active Iceberg connections.
 
-## Catalog Explorer
+## Namespace tree
 
-The left Explorer panel shows the active connection and catalog tree. It includes search, refresh, loading, empty, and error states.
+The left panel shows:
 
-## Namespace Tree
+- Active connection name.
+- Search.
+- Refresh.
+- Expandable namespaces.
+- Tables inside each namespace.
 
-Namespaces appear as expandable tree nodes. Tables are listed under each namespace.
+Selecting a table loads data in the right panel.
 
-## Table Browser
+## Table data grid
 
-Selecting a table loads the right panel. Metadata loading and row-data loading are separate so the UI remains responsive.
-
-## Data Grid
-
-The Table tab shows paginated rows with:
+The data tab shows rows with:
 
 - Server-side pagination.
-- Page size controls.
-- Sorting.
+- Page size options.
+- Column resizing.
 - Sticky headers.
 - Horizontal scrolling.
-- NULL formatting.
-- Click-to-view cell value popup.
+- Sort controls.
+- `NULL` formatting.
+- Loading skeletons.
+- Empty and error states.
 
-## Schema Viewer
+## Pagination
 
-The Schema tab shows Iceberg schema fields and raw field definitions.
+Available page sizes:
 
-## Metadata Viewer
+- 50
+- 100
+- 250
+- 500
+- 1000
 
-The Catalog tab shows table properties, partitions, and snapshots from Iceberg metadata.
+Previous and Next buttons are disabled when no page is available.
+
+## Cache source
+
+The footer shows whether rows came from:
+
+- **Cached** metadata/page data.
+- **Warehouse** reads.
+
+Refresh bypasses valid cached pages and replaces them after a successful warehouse load.
+
+## Schema tab
+
+The Schema tab shows columns and types when Iceberg metadata is available.
+
+## Catalog tab
+
+The Catalog tab shows table metadata such as snapshots, properties, partition information, and file details when available.
+
+## Stale requests
+
+When you switch tables quickly, IceScope cancels or ignores stale table-load requests so old results do not replace the selected table.

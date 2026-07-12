@@ -1,93 +1,90 @@
 # IceScope
 
-IceScope is a modern desktop explorer for Apache Iceberg warehouses. It helps engineers inspect catalogs, browse namespaces and tables, preview data, inspect metadata, and run SQL locally from a fast Tauri + React application.
+[![CI](https://github.com/muhammad-rajib/icescope/actions/workflows/ci.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/ci.yml)
+[![Release](https://github.com/muhammad-rajib/icescope/actions/workflows/release.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/release.yml)
+[![Docs](https://github.com/muhammad-rajib/icescope/actions/workflows/docs.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/docs.yml)
+[![Latest Release](https://img.shields.io/github/v/release/muhammad-rajib/icescope?include_prereleases)](https://github.com/muhammad-rajib/icescope/releases)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/muhammad-rajib/icescope/total.svg)](https://github.com/muhammad-rajib/icescope/releases)
 
-IceScope is early-stage software. The first public release focuses on local Iceberg warehouses, S3-backed metadata loading, DataFusion query execution, and a polished desktop workflow for exploration.
+IceScope is a modern desktop explorer for Apache Iceberg warehouses. It helps engineers inspect catalogs, browse namespaces and tables, preview data, inspect metadata, and run SQL from a fast native Tauri application.
+
+## Links
+
+- [Documentation](https://muhammad-rajib.github.io/icescope/)
+- [Download IceScope](https://github.com/muhammad-rajib/icescope/releases/latest)
+- [GitHub Releases](https://github.com/muhammad-rajib/icescope/releases)
+- [Report an Issue](https://github.com/muhammad-rajib/icescope/issues)
+- [Contributing](CONTRIBUTING.md)
+
+## Project
+
+IceScope is built with:
+
+- Tauri 2 desktop shell.
+- React 19, TypeScript, Vite, and Tailwind CSS frontend.
+- Rust workspace backend with `icescope-core`.
+- SQLite-backed connection and cache storage.
+- Apache-2.0 open-source license.
 
 ## Features
 
-- Desktop UI built with Tauri 2, React 19, TypeScript, Vite, and Tailwind CSS.
-- Catalog Explorer with namespace tree, table browser, schema view, catalog metadata view, and paginated data grid.
-- SQL Lab with multi-tab editor, query history, result grid, CSV export, and DataFusion query execution.
-- Local filesystem warehouse support and S3 storage access through OpenDAL/object-store.
-- Manifest-based Iceberg scans for current snapshots.
-- SQLite-backed connection storage, metadata cache, overview cache, query history, and preview cache.
-- Overview dashboard with warehouse KPIs and sortable table summaries.
-- Dark desktop UI, app settings, toasts, query hints, and friendly error messages.
+- Beginner-friendly connection wizard with progressive disclosure.
+- Explorer namespace tree, table browser, schema view, metadata view, and paginated data grid.
+- SQL Lab with multi-tab editor, query history, result grid, and CSV export.
+- Local Hadoop-style Iceberg warehouse support.
+- S3 object access foundations through OpenDAL/object-store.
+- Manifest-based current snapshot scans.
+- Overview dashboard with cached table summaries.
+- Dark desktop UI, toasts, query hints, and friendly error states.
 
 ## Screenshots
 
-Screenshots are stored in `assets/screenshots/`. Add release screenshots before publishing a GitHub release.
+Screenshots belong in `assets/screenshots/`. Add current screenshots before publishing a public release.
 
-Suggested first-release screenshots:
+## Architecture
 
-- Explorer namespace tree and data grid.
-- SQL Lab editor and result grid.
-- Connections form for local and S3 warehouses.
-- Overview KPI dashboard.
+```text
+React UI -> Tauri commands -> src-tauri shell -> icescope-core -> catalogs/storage/query engines
+                                      |
+                                      +-> SQLite app database and caches
+```
 
-## Supported Platforms
-
-IceScope targets native desktop builds for:
-
-- macOS Intel and Apple Silicon
-- Windows x64
-- Linux x64
-
-See `docs/installation.md` for platform-specific notes.
+See `docs/architecture.md` for details.
 
 ## Installation
 
-Prebuilt installers will be published on the GitHub Releases page after the first public release.
+Prebuilt installers are published on the GitHub Releases page.
 
-Until then, build from source:
+- macOS Apple Silicon: DMG
+- macOS Intel: DMG
+- Windows x64: MSI and EXE
+- Linux x64: AppImage, DEB, and RPM
 
-```bash
-make install
-make dev
-```
+## Downloads
 
-## Quick Start
+- [Latest release](https://github.com/muhammad-rajib/icescope/releases/latest)
+- [All releases](https://github.com/muhammad-rajib/icescope/releases)
+- [Documentation website](https://muhammad-rajib.github.io/icescope/)
 
-1. Open **Connections**.
-2. Add a local connection pointing at an Iceberg warehouse path, or click **Add sample data**.
-3. Open **Explorer** to browse namespaces and tables.
-4. Select a table to preview rows, schema, and catalog metadata.
-5. Open **SQL Lab** and run:
-
-```sql
-SELECT *
-FROM analytics.events
-LIMIT 10;
-```
-
-## Supported Iceberg Catalogs
-
-Current support:
-
-- Hadoop-style local warehouse layout
-- S3-backed Iceberg metadata and data files
-
-Planned support:
-
-- REST Catalog
-- AWS Glue
-- Hive Metastore
-- Nessie
-
-See `docs/supported-catalogs.md`.
-
-For the beginner-friendly connection wizard and enterprise connection options, see `docs/connections.md`.
-
-## Build From Source
+## Building
 
 Prerequisites:
 
 - Node.js 22+
 - Rust stable
-- Platform dependencies for Tauri 2
+- Tauri 2 platform dependencies
 
-Commands:
+```bash
+npm ci
+npm run build
+cargo build --workspace
+npm run tauri:build
+```
+
+See `docs/build.md`.
+
+## Development
 
 ```bash
 make install
@@ -96,32 +93,30 @@ make test
 make build
 ```
 
-See `docs/build.md` for complete build instructions.
+Useful checks:
 
-## Repository Layout
+```bash
+npm run lint
+npm run check
+npm test
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
 
-- `src/` — React frontend.
-- `src-tauri/` — Tauri shell and IPC commands.
-- `crates/icescope-core/` — Rust library for Iceberg metadata, catalogs, caching, and query engines.
-- `assets/` — icons, logos, and screenshots.
-- `docs/` — user, developer, and architecture documentation.
-- `examples/` — catalog setup examples.
-- `scripts/` — fixture and release helper scripts.
+## GitHub Actions
+
+- `ci.yml` runs frontend and Rust checks on every push and pull request.
+- `release.yml` builds native installers and creates draft prerelease GitHub Releases for `v*` tags.
+- `docs.yml` publishes the VitePress documentation website from `docs/`.
 
 ## Roadmap
 
-The public roadmap is tracked in `docs/roadmap.md`.
-
-Near-term priorities:
-
-- Improve local and S3 catalog reliability.
-- Expand SQL Lab ergonomics.
-- Add REST Catalog and AWS Glue support.
-- Harden release packaging and signed installers.
+See `ROADMAP.md` and `docs/roadmap.md`.
 
 ## Contributing
 
-Contributions are welcome. Please read:
+Please read:
 
 - `CONTRIBUTING.md`
 - `CODE_OF_CONDUCT.md`

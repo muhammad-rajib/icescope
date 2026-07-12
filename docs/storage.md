@@ -1,23 +1,31 @@
 # Storage
 
-IceScope storage adapters are independent from catalogs and engines.
+Storage connectors read Iceberg metadata files, manifests, and Parquet data files.
 
-## Local Filesystem
+## Local filesystem
 
-Use a local warehouse folder for development, learning, and local data inspection.
+Local storage is available and recommended for first-time use.
 
-## AWS S3
+Use it when your warehouse path looks like:
 
-Use bucket, warehouse prefix, region, and standard AWS credentials.
+```text
+/Users/example/warehouse/demo
+```
 
-## MinIO
+## S3 and MinIO
 
-Use endpoint, bucket, warehouse path, access key, and secret key for S3-compatible local development.
+S3-compatible storage is experimental. IceScope includes foundations for:
 
-## Google Cloud Storage
+- Environment variable credentials.
+- AWS credentials file loading.
+- Explicit endpoint and region fields.
+- Path-style access for MinIO-style deployments.
 
-Planned support for ADC and service account authentication.
+Instance metadata service discovery is intentionally not used in preview builds.
 
-## Azure Data Lake Storage Gen2
+## Planned storage backends
 
-Planned support for managed identity, service principal, and account key authentication.
+- Google Cloud Storage
+- Azure Data Lake Storage
+
+These integrations are documented as project direction, not stable functionality.

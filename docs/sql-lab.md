@@ -1,32 +1,57 @@
 # SQL Lab
 
-SQL Lab is the interactive query workspace.
+SQL Lab is a compact desktop SQL workspace for read-only exploration.
 
-## Query Editor
-
-The editor uses CodeMirror and supports line numbers, word wrap, autocomplete settings, and dark desktop styling.
-
-## Multiple Tabs
+## Query tabs
 
 SQL drafts are stored in multiple tabs. Tabs support:
 
-- Up to 20 open drafts.
-- Auto titles.
+- Automatic titles.
 - Rename.
 - Close.
 - Unsaved-change indicators.
-- Persistent SQL text.
+- Local persistence for draft text.
 
-Results are memory-only and are not persisted.
+Results are memory-only.
 
-## Query History
+## Editor
 
-Query history is stored per connection in localStorage when enabled in Settings. History can be opened from the SQL Lab result panel or overflow menu.
+The editor supports SQL editing with a developer-tool layout. Editor settings such as font size, line numbers, word wrap, and autocomplete are controlled in Settings.
 
-## Result Grid
+## Run a query
 
-Results are shown in a virtualized grid with row numbers, pagination, and compact status information.
+Use the Run button for read-only SQL queries.
 
-## Export
+```sql
+SELECT *
+FROM learning.demo.customers
+LIMIT 100;
+```
 
-Use the SQL Lab overflow menu to export current results as CSV or save the active SQL tab as a `.sql` file.
+```sql
+SELECT country, COUNT(*)
+FROM learning.demo.customers
+GROUP BY country;
+```
+
+## Results
+
+The lower panel includes:
+
+- Results
+- Messages
+- History
+
+The compact status bar shows row count, execution time, cache source, and page information.
+
+## History
+
+Query history is stored locally and can be reopened from the History panel.
+
+## Cache behavior
+
+Table preview cache and arbitrary SQL execution are intentionally separate. IceScope never uses partial cached table pages to execute arbitrary SQL queries.
+
+## Limitations
+
+Preview builds focus on local DataFusion execution. DuckDB and Athena engine routing is experimental or planned depending on connection type.

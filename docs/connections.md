@@ -1,41 +1,68 @@
 # Connections
 
-IceScope uses a step-by-step connection wizard with progressive disclosure.
+IceScope models connections as three independent layers: query engine, Iceberg catalog, and storage.
 
-## Wizard Flow
+## Layers
 
-1. Select a connection type.
-2. Enter general information.
-3. Configure storage.
-4. Configure catalog.
-5. Choose a query engine.
-6. Configure authentication.
-7. Test the connection.
-8. Review and save.
+### Query Engine
 
-Common local connections require only a name and warehouse folder. Advanced fields stay hidden until needed.
+The engine runs SQL and table preview queries.
 
-## Connection Types
+| Engine | Status | Notes |
+| --- | --- | --- |
+| Automatic | Planned | Selects the safest available engine for a connection. |
+| DataFusion | Available | Primary local query engine in preview builds. |
+| DuckDB | Experimental | Routing is represented, full execution is not stable. |
+| Spark | Planned | Future distributed execution option. |
+| Trino | Planned | Future remote query option. |
 
-- Local Warehouse
-- AWS S3 + Glue
-- REST Catalog
-- MinIO
-- Advanced
+### Iceberg Catalog
 
-## Compatibility
+The catalog resolves namespaces, tables, snapshots, and metadata.
 
-IceScope validates storage/catalog compatibility before saving:
+| Catalog | Status |
+| --- | --- |
+| Hadoop / local warehouse | Available |
+| REST Catalog | Planned |
+| AWS Glue | Planned |
+| Hive Metastore | Planned |
+| JDBC | Planned |
+| Nessie | Planned |
 
-- Hadoop + Local
-- Hadoop + S3
-- REST + S3
-- REST + MinIO
-- Glue + S3
-- Nessie + S3
+### Storage
 
-Unsupported combinations show a clear validation message.
+Storage reads metadata JSON, manifest files, and Parquet data files.
 
-## Secret Handling
+| Storage | Status |
+| --- | --- |
+| Local filesystem | Available |
+| S3 | Experimental |
+| MinIO | Experimental |
+| GCS | Planned |
+| Azure ADLS | Planned |
 
-The wizard does not persist secret values in plain text. Prefer environment variables, AWS profiles, or future OS credential manager integration.
+## Templates
+
+### Local Warehouse
+
+Use this for local development and demos. Provide a warehouse directory and select local storage.
+
+### REST Catalog
+
+Planned template for REST Catalog endpoints.
+
+### AWS Glue + S3
+
+Planned catalog integration with experimental S3 storage foundations.
+
+### MinIO
+
+Experimental S3-compatible storage path. Use explicit endpoint, region, bucket, and credentials.
+
+### Nessie
+
+Planned versioned catalog template.
+
+### Advanced
+
+Future template for custom catalog, storage, and engine combinations.

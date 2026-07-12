@@ -1,50 +1,47 @@
 # Installation
 
-IceScope targets Windows, macOS, and Linux desktop builds through Tauri.
-
-## Windows
-
-Use the `.msi` or `.exe` installer from GitHub Releases when available.
-
-Build prerequisites:
-
-- Node.js 22+
-- Rust stable
-- Microsoft C++ Build Tools
-- WebView2 runtime
+Install IceScope from [GitHub Releases](https://github.com/muhammad-rajib/icescope/releases/latest) or build it from source.
 
 ## macOS
 
-Use the `.dmg` artifact for your CPU architecture:
+1. Download the DMG for your CPU architecture.
+2. Open the DMG.
+3. Drag IceScope into `Applications`.
+4. Launch IceScope.
 
-- Apple Silicon: `aarch64`
-- Intel: `x86_64`
+If macOS blocks an unsigned preview build, open **System Settings → Privacy & Security** and allow the app only if it came from the official release page.
 
-Build prerequisites:
+## Windows
 
-- Node.js 22+
-- Rust stable
-- Xcode Command Line Tools
+1. Download the EXE installer or MSI package.
+2. Run the installer.
+3. If SmartScreen appears, verify the publisher/source and continue only for trusted preview builds.
 
 ## Linux
 
-Use the `.deb`, `.rpm`, or AppImage artifact when available.
-
-Build prerequisites vary by distribution. Ubuntu/Debian packages:
+### AppImage
 
 ```bash
-sudo apt-get install -y \
-  libwebkit2gtk-4.1-dev \
-  libayatana-appindicator3-dev \
-  librsvg2-dev \
-  patchelf
+chmod +x IceScope*.AppImage
+./IceScope*.AppImage
 ```
 
-## Build Prerequisites
+### DEB
 
-All platforms require:
+```bash
+sudo apt install ./icescope*.deb
+```
+
+### RPM
+
+```bash
+sudo rpm -i icescope*.rpm
+```
+
+## Build prerequisites
 
 - Node.js 22+
 - Rust stable
-- npm
-- Tauri 2 platform dependencies
+- Tauri 2 system dependencies for your operating system
+
+For Linux, install WebKitGTK and app indicator packages required by Tauri.

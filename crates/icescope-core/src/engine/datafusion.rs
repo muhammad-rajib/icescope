@@ -16,6 +16,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+type QueryRows = Vec<BTreeMap<String, Value>>;
+
 pub async fn execute_page(
     profile: &ConnectionProfile,
     snapshot_scans: Option<&BTreeMap<String, SnapshotScanResult>>,
@@ -189,9 +191,7 @@ fn inject_limit_offset(sql: &str, limit: usize, offset: usize) -> String {
     }
 }
 
-fn batches_to_rows(
-    batches: &[RecordBatch],
-) -> anyhow::Result<(Vec<String>, Vec<BTreeMap<String, Value>>)> {
+fn batches_to_rows(batches: &[RecordBatch]) -> anyhow::Result<(Vec<String>, QueryRows)> {
     let Some(first_batch) = batches.first() else {
         return Ok((Vec::new(), Vec::new()));
     };
