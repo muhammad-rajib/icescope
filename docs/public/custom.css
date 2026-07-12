@@ -98,6 +98,12 @@
   border: 1px solid var(--vp-c-border);
 }
 
+.vp-button.compact {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
 .product-hero {
   position: relative;
   display: grid;
@@ -188,6 +194,109 @@
   background: var(--vp-c-bg-soft);
 }
 
+.download-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.35fr);
+  gap: 24px;
+  align-items: center;
+  margin: 34px 0 24px;
+  padding: clamp(22px, 4vw, 38px);
+  border: 1px solid var(--vp-c-border);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.24), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 8, 23, 0.98));
+  box-shadow: 0 28px 90px rgba(2, 8, 23, 0.38);
+}
+
+.download-hero .eyebrow {
+  margin: 0 0 12px;
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.download-hero h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: 760px;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+
+.download-hero p {
+  max-width: 720px;
+  color: var(--vp-c-text-2);
+}
+
+.download-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.download-actions .vp-button {
+  width: 100%;
+  margin: 0;
+}
+
+.download-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.download-card {
+  display: flex;
+  min-height: 330px;
+  flex-direction: column;
+  border: 1px solid var(--vp-c-border);
+  border-radius: 22px;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(15, 23, 42, 0.82));
+  box-shadow: 0 18px 60px rgba(2, 8, 23, 0.18);
+}
+
+.download-card h3 {
+  margin: 8px 0 8px;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.download-card p {
+  color: var(--vp-c-text-2);
+}
+
+.download-card ul {
+  margin: 12px 0 18px;
+  padding-left: 18px;
+  color: var(--vp-c-text-2);
+}
+
+.download-card .vp-button {
+  margin-top: auto;
+}
+
+.platform-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 14px;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  font-size: 22px;
+  font-weight: 800;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -221,5 +330,18 @@
 
   .product-hero img {
     width: min(100%, 260px);
+  }
+
+  .download-hero {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+
+  .download-actions {
+    align-items: flex-start;
+  }
+
+  .download-actions .vp-button {
+    width: auto;
   }
 }

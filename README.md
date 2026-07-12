@@ -3,17 +3,16 @@
 [![CI](https://github.com/muhammad-rajib/icescope/actions/workflows/ci.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/ci.yml)
 [![Release](https://github.com/muhammad-rajib/icescope/actions/workflows/release.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/release.yml)
 [![Docs](https://github.com/muhammad-rajib/icescope/actions/workflows/docs.yml/badge.svg)](https://github.com/muhammad-rajib/icescope/actions/workflows/docs.yml)
-[![Latest Release](https://img.shields.io/github/v/release/muhammad-rajib/icescope?include_prereleases)](https://github.com/muhammad-rajib/icescope/releases)
+[![Latest Release](https://img.shields.io/github/v/release/muhammad-rajib/icescope?include_prereleases)](https://github.com/muhammad-rajib/icescope/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/muhammad-rajib/icescope/total.svg)](https://github.com/muhammad-rajib/icescope/releases)
 
 IceScope is a modern desktop explorer for Apache Iceberg warehouses. It helps engineers inspect catalogs, browse namespaces and tables, preview data, inspect metadata, and run SQL from a fast native Tauri application.
 
 ## Links
 
-- [Documentation](https://muhammad-rajib.github.io/icescope/)
 - [Download IceScope](https://github.com/muhammad-rajib/icescope/releases/latest)
-- [GitHub Releases](https://github.com/muhammad-rajib/icescope/releases)
+- [Documentation](https://muhammad-rajib.github.io/icescope/)
+- [Latest Release](https://github.com/muhammad-rajib/icescope/releases/latest)
 - [Report an Issue](https://github.com/muhammad-rajib/icescope/issues)
 - [Contributing](CONTRIBUTING.md)
 
@@ -54,18 +53,14 @@ See `docs/architecture.md` for details.
 
 ## Installation
 
-Prebuilt installers are published on the GitHub Releases page.
+Prebuilt installers are published on the [latest GitHub Release](https://github.com/muhammad-rajib/icescope/releases/latest).
 
 - macOS Apple Silicon: DMG
 - macOS Intel: DMG
 - Windows x64: MSI and EXE
 - Linux x64: AppImage, DEB, and RPM
 
-## Downloads
-
-- [Latest release](https://github.com/muhammad-rajib/icescope/releases/latest)
-- [All releases](https://github.com/muhammad-rajib/icescope/releases)
-- [Documentation website](https://muhammad-rajib.github.io/icescope/)
+IceScope is currently an early preview, and some installers may be unsigned. See the full [download and installation guide](https://muhammad-rajib.github.io/icescope/download/) before installing preview builds.
 
 ## Building
 
